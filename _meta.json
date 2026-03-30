@@ -1,10 +1,10 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "publishedAt": 1774777339738,
   "namespace": "ryanbihai",
-  "changelog": "v3.3.0: 冲突检测去重（父子项不能同框），修复check_conflicts.js bug",
+  "changelog": "v3.4.0: 添加触发词",
   "tags": [
     "健康体检",
     "体检推荐",
