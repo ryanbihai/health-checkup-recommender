@@ -1,10 +1,10 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "publishedAt": 1774777339738,
   "namespace": "ryanbihai",
-  "changelog": "v2.3.0: 删除含PII编码的旧文档docs/URL_ENCODING.md，修复generate_qr.py的bug，与JS版保持一致",
+  "changelog": "v2.4.0: 删除含URL参数的booking_info.md，修正隐私声明为\"二维码不含PII\"，解决文档自相矛盾",
   "tags": [
     "健康体检",
     "体检推荐",
