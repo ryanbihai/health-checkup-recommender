@@ -1,10 +1,10 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "publishedAt": 1774777339738,
   "namespace": "ryanbihai",
-  "changelog": "v3.1.0: 套餐保底400元自动补充，高风险项优先，低价通用项兜底",
+  "changelog": "v3.2.0: 强制verify_items.js核查流程，数据库项目清单入SKILL.md，幻觉项目不得输出",
   "tags": [
     "健康体检",
     "体检推荐",
