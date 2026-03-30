@@ -1,39 +1,41 @@
 #!/usr/bin/env node
 /**
- * 体检项目核查脚本（支持 ItemID + 中文名双模式）
+ * 体检项目核查脚本（v2.0）
  *
- * 1. ItemID 直接通过（Item029、Item128 等）
- * 2. 中文名模糊匹配（"胃镜"、"颈动脉彩超"等）
- * 3. 旧编码兼容（HLZXX0205 等，仍从 md 文件读取）
+ * 三重保障：
+ * 1. ItemID 有效性验证（模糊匹配中文名/旧编码）
+ * 2. 冲突检测（同类父子项去重）→ 来自 check_conflicts.js
+ * 3. 核查+去重后的套餐总价
  *
- * 用法: node verify_items.js Item029 胃镜 Item128
+ * 用法:
+ *   node verify_items.js Item029 Item035 Item154 Item016
  */
+const { checkConflicts } = require('./check_conflicts.js');
 
 const fs = require('fs');
 const path = require('path');
-
 const ITEMS_JSON_PATH = path.join(__dirname, '..', 'reference', 'checkup_items.json');
 const ITEMS_MD_PATH   = path.join(__dirname, '..', 'reference', 'checkup_items.md');
 
-let ITEMS_DB = {};        // id -> { name, price }
-let NAME_TO_ID = {};      // normalized name -> id
+let ITEMS_DB = {};
+let NAME_TO_ID = {};
 
 try {
   const data = JSON.parse(fs.readFileSync(ITEMS_JSON_PATH, 'utf-8'));
   ITEMS_DB = data.items || {};
-  // 构建中文名反向索引
   for (const [id, info] of Object.entries(ITEMS_DB)) {
     const key = info.name.replace(/\s+/g, ' ').trim().toLowerCase();
     NAME_TO_ID[key] = id;
   }
 } catch (e) {
-  console.error('[WARN] 无法加载 checkup_items.json:', e.message);
+  console.error('[ERROR] 无法加载 checkup_items.json:', e.message);
+  process.exit(1);
 }
 
-// 从 md 文件加载旧编码（兼容）
-let OLD_CODE_MAP = {}; // name -> HLZXX code
+// 旧编码兼容
+let OLD_CODE_MAP = {};
 try {
-  const md = fs.readFileSync(ITEMS_JSON_PATH.replace('.json', '.md'), 'utf-8');
+  const md = fs.readFileSync(ITEMS_MD_PATH, 'utf-8');
   const rows = md.match(/^\|\s*HLZXX[\d~\-A-Z]+\s*\|\s*([^|]+?)\s*\|/gm) || [];
   for (const row of rows) {
     const parts = row.split('|');
@@ -41,106 +43,102 @@ try {
     const name = parts[2]?.trim();
     if (code && name) OLD_CODE_MAP[name.toLowerCase()] = code;
   }
-} catch (e) {
-  // md 不存在没关系
-}
+} catch (e) { /* md 不存在不影响 */ }
 
-function normalize(str) {
-  return str.trim().replace(/\s+/g, ' ');
-}
-
-/**
- * 验证单个项目
- * @returns {{ id, name, price, status, from }}
- */
+// ============================================================
+// 第一步：ItemID 有效性验证
+// ============================================================
 function verifyOne(item) {
-  const norm = normalize(item);
-
-  // 1. 精确 ItemID
-  if (norm in ITEMS_DB) {
+  const norm = item.trim();
+  if (norm in ITEMS_DB)
     return { id: norm, name: ITEMS_DB[norm].name, price: ITEMS_DB[norm].price, status: '✅', from: 'ItemID' };
-  }
-
-  // 2. 大小写不敏感 ItemID（item029 → Item029）
   const lowerId = 'item' + norm.replace(/^item/i, '');
-  if (lowerId in ITEMS_DB) {
+  if (lowerId in ITEMS_DB)
     return { id: lowerId, name: ITEMS_DB[lowerId].name, price: ITEMS_DB[lowerId].price, status: '✅', from: 'ItemID' };
-  }
-
-  // 3. 中文名模糊匹配
   const normLower = norm.toLowerCase();
   for (const [key, id] of Object.entries(NAME_TO_ID)) {
-    if (key.includes(normLower) || normLower.includes(key)) {
+    if (key.includes(normLower) || normLower.includes(key))
       return { id, name: ITEMS_DB[id].name, price: ITEMS_DB[id].price, status: '✅', from: '中文名匹配' };
-    }
   }
-
-  // 4. 旧编码（HLZXX...）
   if (norm.startsWith('HLZXX') && Object.values(OLD_CODE_MAP).includes(norm)) {
     const name = Object.entries(OLD_CODE_MAP).find(([, v]) => v === norm)?.[0];
     const id = Object.entries(ITEMS_DB).find(([, v]) => v.name.toLowerCase() === name)?.[0];
     if (id) return { id, name: ITEMS_DB[id].name, price: ITEMS_DB[id].price, status: '✅', from: '旧编码' };
   }
-
-  return { item: norm, status: '❌', hint: '未找到对应项目，请检查 ID 或中文名称' };
+  return { id: norm, status: '❌', hint: '未找到对应项目，请检查 ID 或中文名称' };
 }
 
-/**
- * 批量验证
- * @param {string[]} items - 项目列表（ItemID 或中文名）
- * @returns {{ results, errors, totalPrice }}
- */
-function verify(items) {
-  const results = [];
-  const errors = [];
-
-  for (const item of items) {
+function verifyAll(rawItems) {
+  const results = [], errors = [];
+  for (const item of rawItems) {
     const r = verifyOne(item);
-    if (r.status === '✅') {
-      results.push(r);
-    } else {
-      errors.push(r);
-    }
+    (r.status === '✅' ? results : errors).push(r);
   }
-
-  const totalPrice = results.reduce((s, r) => s + (r.price || 0), 0);
-  return { results, errors, totalPrice };
+  return { results, errors };
 }
 
+// ============================================================
 // CLI
+// ============================================================
 if (require.main === module) {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    console.log('用法: node verify_items.js Item029 Item035 胃镜 颈动脉彩超');
-    console.log('示例: node verify_items.js Item128 Item035');
+    console.log('用法: node verify_items.js Item029 Item035 Item154 Item016 Item083 Item071');
     console.log('');
-    console.log('支持格式: ItemID (Item029) / 中文名 (胃镜) / 旧编码 (HLZXX0205)');
-    process.exit(1);
+    console.log('--- 演示 ---');
+    const demo = ['Item029', 'Item030', 'Item154', 'Item016', 'Item155', 'Item083', 'Item071', 'Item173', 'Item176', 'Item107', 'Item105'];
+    console.log('输入:', demo.join(', '));
+    const { results, errors } = verifyAll(demo);
+    const { resolved, removed, total } = checkConflicts(results.map(r => r.id));
+
+    console.log('\n━━━ 有效性核查 ━━━');
+    results.forEach(r => console.log(`${r.status} ${r.id}  ${r.name}  ¥${r.price}`));
+    errors.forEach(e => console.log(`${e.status} ${e.id}  → ${e.hint}`));
+
+    if (removed.length) {
+      console.log('\n━━━ 冲突检测（同类父子项，已自动移除）━━━');
+      removed.forEach(r => console.log(`  ❌ ${r.id} ${r.name} → ${r.reason}`));
+    }
+
+    console.log(`\n✅ 有效: ${results.length}  ❌ 无效: ${errors.length}  🔸 冲突移除: ${removed.length}`);
+    console.log(`💰 套餐总价: ¥${total}（仅供参考，以医院实际收费为准）`);
+    console.log('\n去重后项目:', resolved.join(', '));
+    process.exit(errors.length > 0 ? 1 : 1);
+    return;
   }
 
-  const { results, errors, totalPrice } = verify(args);
-
+  const { results, errors } = verifyAll(args);
   console.log('\n🔍 体检项目核查结果\n');
-  console.log('━━━ 有效项目 ━━━');
-  results.forEach(r => {
-    console.log(`${r.status} ${r.id}  ${r.name}  ¥${r.price}  [${r.from}]`);
-  });
+
+  if (results.length) {
+    console.log('━━━ 有效项目 ━━━');
+    results.forEach(r => console.log(`${r.status} ${r.id}  ${r.name}  ¥${r.price}  [${r.from}]`));
+  }
+  if (errors.length) {
+    console.log('\n━━━ 无效项目 ━━━');
+    errors.forEach(e => console.log(`${e.status} ${e.id}  → ${e.hint}`));
+  }
+
+  const { resolved, removed, total } = checkConflicts(results.map(r => r.id));
+
+  if (removed.length) {
+    console.log('\n━━━ 冲突检测（同类父子项，已自动移除）━━━');
+    removed.forEach(r => console.log(`  ❌ ${r.id} ${r.name} → ${r.reason}`));
+  }
+
+  console.log(`\n✅ 有效: ${results.length}  ❌ 无效: ${errors.length}  🔸 冲突移除: ${removed.length}`);
+  if (results.length) console.log(`💰 套餐总价: ¥${total}（仅供参考，以医院实际收费为准）`);
 
   if (errors.length > 0) {
-    console.log('\n━━━ 疑似问题项目 ━━━');
-    errors.forEach(e => {
-      console.log(`${e.status} ${e.item}`);
-      if (e.hint) console.log(`   → ${e.hint}`);
-    });
+    console.log('\n⚠️ 有无效项目，请修正后重新核查');
+    process.exit(1);
   }
-
-  console.log(`\n✅ 有效: ${results.length}  ❌ 无效: ${errors.length}`);
-  if (results.length > 0) {
-    console.log(`💰 合计价格: ¥${totalPrice}（仅供参考，以医院实际收费为准）`);
+  if (removed.length > 0) {
+    console.log('\n去重后项目:', resolved.join(', '));
+    process.exit(1);
   }
-
-  if (errors.length > 0) process.exit(1);
+  process.exit(0);
 }
 
-module.exports = { verify, verifyOne, ITEMS_DB };
+module.exports = { verifyOne, verifyAll, checkConflicts, ITEMS_DB };

@@ -41,6 +41,8 @@ const ITEMS_MAP = {
   '冠状动脉钙化积分': 'G10', '乳腺彩超+钼靶': 'G11', 'TCT+HPV': 'G12',
 };
 
+const { checkConflicts } = require('./check_conflicts.js');
+
 // ========== 核心逻辑 ==========
 
 /**
@@ -60,8 +62,11 @@ function buildPackage(itemIds = [], userProfile = {}) {
   const baseTotal = baseItems.reduce((s, it) => s + it.price, 0);
 
   // 保底400自动补充
-  const { addedIds, reason: topupReason } = autoTopup(baseTotal, baseIds, userProfile);
-  const allIds = [...new Set([...baseIds, ...addedIds])];
+  // 冲突检测：父子项去重（保留父项，移除子项）
+  const { resolved: conflictFreeIds } = checkConflicts(baseIds);
+
+  const { addedIds, reason: topupReason } = autoTopup(baseTotal, conflictFreeIds, userProfile);
+  const allIds = [...new Set([...conflictFreeIds, ...addedIds])];
 
   const items = allIds.map(id => {
     const info = ITEMS_DB[id];
