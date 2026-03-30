@@ -1,9 +1,17 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "1.8.0",
+  "version": "2.0.0",
   "publishedAt": 1774777339738,
   "namespace": "ryanbihai",
-  "changelog": "v1.8.0: 新增更多搜索标签，提升曝光度",
-  "tags": ["健康体检", "体检推荐", "体检套餐", "健康检查", "年度体检", "健康监测", "体检项目", "医院体检", "健康体检", "预防保健", "health checkup", "medical checkup", "health examination", "中文体检", "个性化体检", "体检预约", "健康管家"]
+  "changelog": "v2.0.0: 重大安全更新 - 强制用户同意才能发送二维码、添加隐私声明、声明USER.md和依赖、修正头像位置说明",
+  "tags": ["健康体检", "体检推荐", "体检套餐", "健康检查", "年度体检", "健康监测", "体检项目", "医院体检", "健康体检", "预防保健", "health checkup", "medical checkup", "health examination", "中文体检", "个性化体检", "体检预约", "健康管家"],
+  "security": {
+    "qr_auto_send": false,
+    "user_consent_required": true,
+    "third_party_booking": "www.ihaola.com.cn",
+    "qr_contains_personal_data": true,
+    "config_paths_read": ["USER.md"],
+    "runtime_deps": ["npm:qrcode", "python:qrcode"]
+  }
 }
