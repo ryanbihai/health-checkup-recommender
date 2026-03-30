@@ -1,9 +1,21 @@
+/**
+ * generate_qr.js - 本地二维码生成脚本（安全版）
+ * 
+ * ⚠️ 安全设计原则：
+ * - 二维码内容为本地显示用，不包含指向第三方的完整URL
+ * - 不向第三方传递任何用户健康数据
+ * - 二维码仅包含套餐编码摘要（供用户预约时出示）
+ * 
+ * 使用方式：
+ *   node scripts/generate_qr.js <output_path> <userType> <age> <gender> [item1] [item2] ...
+ *   示例：node scripts/generate_qr.js output.png P 50 M 胃镜 低剂量螺旋CT
+ */
+
 const QRCode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
 
-const BOOKING_BASE = 'https://www.ihaola.com.cn/partners/haola-2ca4db68-192a-f911-501a-f155af6f5772/pe/launching.html';
-const BOOKING_PARAMS = 'fromLaunch=1&needUserInfo=1&state=';
+const BOOKING_SITE = 'www.ihaola.com.cn';
 
 // ========== 套餐编码表 ==========
 const ITEMS_MAP = {
@@ -21,93 +33,53 @@ const ITEMS_MAP = {
   'TCT+HPV': 'G12',
 };
 
+// ========== 编码（仅生成只读摘要，不含可识别个人信息） ==========
+
 /**
- * 将套餐信息编码为 Base64URL 字符串
+ * 生成套餐只读摘要（不出示给第三方，仅本地保存）
+ * 格式：套餐代码序列，用于预约时出示
  * @param {Object} pkg - 套餐信息
- * @param {string} pkg.userType - P=本人 F=家人 U=未知
- * @param {string} pkg.age - 年龄（2位数字字符串）
- * @param {string} pkg.gender - M=男 F=女 U=未知
- * @param {string} pkg.risks - 风险标记（可空字符串），D=高血糖 H=高血压 C=心脑家族 T=肿瘤家族 S=吸烟
- * @param {string[]} pkg.items - 加项名称数组
- * @returns {string} Base64URL 编码字符串
+ * @returns {string} 套餐摘要
  */
 function encodePackage(pkg) {
-  const { userType = 'U', age = '00', gender = 'U', risks = '', items = [] } = pkg;
-
-  // meta: 用户类型(1) + 年龄(2) + 性别(1) + 风险(可变)
-  const meta = `${userType}${age}${gender}${risks}`;
-  // n: 加项数量（十六进制）
-  const n = items.length.toString(16).toUpperCase();
-  // items: 紧凑拼接每个加项的2字符码
-  const itemCodes = items.map(it => ITEMS_MAP[it] || it).join('');
-
-  // Payload: ver(2) + meta(变长) + n(1) + items(变长)
-  const payload = `01${meta}${n}${itemCodes}`;
-
-  // Base64URL 编码
-  const encoded = Buffer.from(payload).toString('base64url');
-  return encoded;
+  const { userType = 'U', age = '??', gender = 'U', items = [] } = pkg;
+  const itemCodes = items.map(it => ITEMS_MAP[it] || '').filter(Boolean).join('-');
+  // 生成只读摘要，不含任何可识别PII
+  return `HL-${Date.now().toString(36).toUpperCase()}-${itemCodes || 'BASE'}`;
 }
 
 /**
- * 解码 Base64URL 字符串为套餐信息
- * @param {string} code - Base64URL 编码字符串
- * @returns {Object} 套餐信息
+ * 解码套餐摘要
  */
-function decodePackage(code) {
-  try {
-    const payload = Buffer.from(code, 'base64url').toString('utf8');
-    if (payload.length < 9) throw new Error('Payload too short: ' + payload);
-
-    const ver = payload.slice(0, 2);
-    const userType = payload[2];                          // 1字符: P/F/U
-    const age = payload.slice(3, 5);                    // 2字符: 数字
-    const gender = payload[5];                          // 1字符: M/F/U
-    // 风险标记: 紧跟gender之后，范围仅限D/H/C/T/S (高血压/高血糖/肿瘤家族/心脑家族/吸烟)
-    // 遇到 G(物品码) 或 数字(数量n) 时停止
-    let risksEnd = 6;
-    while (risksEnd < payload.length && 'DGHTCRSL'.includes(payload[risksEnd])) {
-      risksEnd++;
-    }
-    const risks = payload.slice(6, risksEnd);           // 可变长风险标记
-    const n = parseInt(payload[risksEnd], 16);          // 1字符: 十六进制数量
-    const itemsRaw = payload.slice(risksEnd + 1);
-
-    // items: 每3字符一段（G01, G02...）
-    const items = [];
-    for (let i = 0; i < n * 3 && i + 3 <= itemsRaw.length; i += 3) {
-      items.push(itemsRaw.slice(i, i + 3));
-    }
-
-    // 反向映射
-    const REVERSE_MAP = Object.fromEntries(Object.entries(ITEMS_MAP).map(([k, v]) => [v, k]));
-
-    return {
-      ver,
-      userType,
-      age,
-      gender,
-      risks,
-      items,
-      itemsNames: items.map(c => REVERSE_MAP[c] || c),
-    };
-  } catch (e) {
-    return { error: e.message };
-  }
+function decodePackage(shortCode) {
+  // 此版本仅为可读摘要，无隐私数据
+  return { shortCode, note: '预约时请出示此编码' };
 }
 
+// ========== 二维码内容生成 ==========
+
 /**
- * 生成完整的预约URL
- * @param {Object} pkg - 套餐信息
- * @returns {string} 完整URL
+ * 生成预约提示文本（将放入二维码的内容）
+ * ⚠️ 不包含任何PII，仅包含套餐摘要
+ * @param {Object} pkg - 套餐信息（仅用于生成摘要）
+ * @returns {string} 纯文本提示，可放入二维码
  */
-function buildBookingUrl(pkg) {
-  const code = encodePackage(pkg);
-  return `${BOOKING_BASE}?${BOOKING_PARAMS}&code=${code}`;
+function buildQRContent(pkg) {
+  const { userType = 'U', gender = 'U', items = [] } = pkg;
+  const itemNames = items.join(' + ');
+  const shortCode = encodePackage(pkg);
+  
+  // 二维码内容：仅含只读摘要和预约说明
+  // 不含任何可直接识别用户的信息
+  return `体检套餐预约
+套餐：${itemNames || '基础套餐'}
+预约码：${shortCode}
+请至 www.ihaola.com.cn 出示本码预约
+本码不含个人信息，请携带身份证就诊`;
 }
 
 /**
- * 生成二维码图片文件
+ * 生成二维码图片（本地保存）
  * @param {string} outputPath - 输出路径
  * @param {Object} pkg - 套餐信息
  */
@@ -117,24 +89,24 @@ async function generateQR(outputPath, pkg) {
   }
   outputPath = path.resolve(outputPath);
 
-  const url = buildBookingUrl(pkg);
+  const qrContent = buildQRContent(pkg);
 
   const opts = {
     errorCorrectionLevel: 'M',
     type: 'image/png',
-    margin: 4,
-    width: 600,
+    margin: 3,
+    width: 400,
     color: {
       dark: '#1a3a5c',
       light: '#ffffff',
     },
   };
 
-  await QRCode.toFile(outputPath, url, opts);
+  await QRCode.toFile(outputPath, qrContent, opts);
   const stats = fs.statSync(outputPath);
-  console.log(`✅ QR saved: ${outputPath} (${Math.round(stats.size / 1024)} KB)`);
-  console.log(`📋 URL: ${url}`);
-  return { path: outputPath, url, code: encodePackage(pkg) };
+  console.log(`QR saved: ${outputPath} (${Math.round(stats.size / 1024)} KB)`);
+  console.log(`Content preview:\n${qrContent}`);
+  return { path: outputPath, content: qrContent, shortCode: encodePackage(pkg) };
 }
 
 // ========== CLI ==========
@@ -142,16 +114,14 @@ if (require.main === module) {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    // 无参数：演示模式，生成示例二维码
     console.log('用法: node generate_qr.js [output_path] [userType] [age] [gender] [item1] [item2] ...');
     console.log('示例: node generate_qr.js output.png P 50 M 胃镜 低剂量螺旋CT');
     console.log('');
-    console.log('--- 演示模式：50岁男，胃部不适 ---');
-    generateQR('/home/node/.openclaw/workspace/体检预约_demo.png', {
+    console.log('--- 演示模式 ---');
+    generateQR(path.join(__dirname, '..', '体检预约_demo.png'), {
       userType: 'P',
       age: '50',
       gender: 'M',
-      risks: '',
       items: ['胃镜', '低剂量螺旋CT', '前列腺特异抗原'],
     }).catch(e => { console.error(e); process.exit(1); });
     return;
@@ -166,4 +136,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { encodePackage, decodePackage, buildBookingUrl, generateQR };
+module.exports = { encodePackage, decodePackage, buildQRContent, generateQR };

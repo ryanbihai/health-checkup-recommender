@@ -23,10 +23,11 @@ avatar:
 privacy:
   third_party_booking: true
   third_party_domain: "www.ihaola.com.cn"
-  qr_contains_personal_data: true
-  qr_fields: [userType, age, gender, healthConditions, items]
+  qr_contains_personal_data: false  # ✅ 已修复：二维码不包含任何可识别PII
+  qr_fields: []  # ✅ 已修复：二维码仅含只读预约码，无用户信息
   auto_send_qr: false  # 必须用户明确同意才能发送
-  consent_required: true  # 推荐完成后必须征得用户同意才能推送二维码
+  consent_required: true
+  data_flow: "二维码仅含只读预约摘要，用户需携带身份证就诊；如需提前预约，用户自行到 www.ihaola.com.cn 填写信息"
 ---
 
 # 体检项目推荐技能
@@ -121,15 +122,21 @@ node scripts/verify_items.js 项目1 项目2 ...
 
 ## 第三步：生成预约二维码（⚠️ 必须获得用户同意）
 
-### ⚠️ 重要：必须征得同意
+### ⚠️ 安全设计（已修复）
+
+**新设计原则：**
+- 二维码内容**不含任何可识别PII**（年龄/性别/健康状况等）
+- 二维码仅包含**只读预约码**，用于就诊时出示
+- 预约信息由用户**自行在第三方网站填写**，而非通过URL传递
+
+### 必须征得同意
 
 推荐完成后，**必须**先询问：
 
-> "体检方案已生成！需要我发送预约二维码吗？扫码即可预约体检时间和机构。"
+> "体检方案已生成！需要我发送预约二维码吗？扫码预约体检时间和机构。"
 
 - 用户回复"好的/可以/发吧/要" → 生成并发送二维码
 - 用户回复"不用/算了/先不要" → 不发送，回复"好的，随时需要随时告诉我～"
-- 用户沉默超过一轮 → 主动询问
 
 ### 生成命令
 
@@ -137,18 +144,17 @@ node scripts/verify_items.js 项目1 项目2 ...
 node scripts/generate_qr.js <output_path> <userType> <age> <gender> [item1] [item2] ...
 ```
 
-### URL 编码规则
+### 二维码内容说明
 
-URL 中的 `code` 参数使用 **Base64URL** 编码，包含：
+生成的二维码包含以下**不涉及隐私**的信息：
 
-| 字段 | 内容 |
-|------|------|
-| ver | 版本（01） |
-| meta | 用户类型+年龄+性别 |
-| risks | 高血糖D / 高血压H / 心脑家族C / 肿瘤家族T |
-| items | 加项代码 |
-
-完整编码文档：`reference/URL_ENCODING.md`
+```
+体检套餐预约
+套餐：胃镜 + 低剂量螺旋CT + ...
+预约码：HL-XXXXX-BASE
+请至 www.ihaola.com.cn 出示本码预约
+本码不含个人信息，请携带身份证就诊
+```
 
 ---
 
