@@ -1,11 +1,29 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "publishedAt": 1774777339738,
   "namespace": "ryanbihai",
-  "changelog": "v2.1.0: 安全修复 - 二维码不再包含PII，改为只读预约码；用户信息由用户自行在第三方网站填写",
-  "tags": ["健康体检", "体检推荐", "体检套餐", "健康检查", "年度体检", "健康监测", "体检项目", "医院体检", "健康体检", "预防保健", "health checkup", "medical checkup", "health examination", "中文体检", "个性化体检", "体检预约", "健康管家"],
+  "changelog": "v2.2.0: 添加医疗免责声明，完成安全闭环",
+  "tags": [
+    "健康体检",
+    "体检推荐",
+    "体检套餐",
+    "健康检查",
+    "年度体检",
+    "健康监测",
+    "体检项目",
+    "医院体检",
+    "健康体检",
+    "预防保健",
+    "health checkup",
+    "medical checkup",
+    "health examination",
+    "中文体检",
+    "个性化体检",
+    "体检预约",
+    "健康管家"
+  ],
   "security": {
     "qr_auto_send": false,
     "user_consent_required": true,
@@ -13,7 +31,12 @@
     "qr_contains_personal_data": false,
     "qr_fields": [],
     "data_flow": "qr_contains_only_readable_booking_reference_no_pii",
-    "config_paths_read": ["USER.md"],
-    "runtime_deps": ["npm:qrcode", "python:qrcode"]
+    "config_paths_read": [
+      "USER.md"
+    ],
+    "runtime_deps": [
+      "npm:qrcode",
+      "python:qrcode"
+    ]
   }
 }
