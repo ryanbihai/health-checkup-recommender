@@ -56,7 +56,7 @@ privacy:
 ## 核心原则
 
 1. **严格循证**：每个推荐项目必须附带 evidence_mappings_2025.json 中的依据
-2. **只推荐清单内有的项目**：checkup_items.md 是唯一可信来源
+2. **只推荐清单内有的项目**：checkup_items.json 是唯一可信来源
 3. **代码核查**：推荐前用 verify_items.js 验证每个项目，防止幻觉
 4. **信息收集完整才能推荐**：5步必须问完
 5. **格式规范**：输出必须使用标准模板
@@ -302,7 +302,7 @@ health-checkup-recommender/
 │   ├── health_sleep_v2.png
 │   └── health_checkup_v2.png
 ├── reference/
-│   ├── checkup_items.md            # 体检项目清单（唯一可信）
+│   ├── checkup_items.json            # 体检项目清单（唯一可信）
 │   ├── symptom_mapping.json         # 症状→加项映射
 │   ├── evidence_mappings_2025.json  # 循证依据
 │   ├── risk_logic_table.json       # 年龄性别风险排名

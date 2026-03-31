@@ -15,7 +15,6 @@ const { checkConflicts } = require('./check_conflicts.js');
 const fs = require('fs');
 const path = require('path');
 const ITEMS_JSON_PATH = path.join(__dirname, '..', 'reference', 'checkup_items.json');
-const ITEMS_MD_PATH   = path.join(__dirname, '..', 'reference', 'checkup_items.md');
 
 let ITEMS_DB = {};
 let NAME_TO_ID = {};
@@ -31,19 +30,6 @@ try {
   console.error('[ERROR] 无法加载 checkup_items.json:', e.message);
   process.exit(1);
 }
-
-// 旧编码兼容
-let OLD_CODE_MAP = {};
-try {
-  const md = fs.readFileSync(ITEMS_MD_PATH, 'utf-8');
-  const rows = md.match(/^\|\s*HLZXX[\d~\-A-Z]+\s*\|\s*([^|]+?)\s*\|/gm) || [];
-  for (const row of rows) {
-    const parts = row.split('|');
-    const code = parts[1]?.trim();
-    const name = parts[2]?.trim();
-    if (code && name) OLD_CODE_MAP[name.toLowerCase()] = code;
-  }
-} catch (e) { /* md 不存在不影响 */ }
 
 // ============================================================
 // 第一步：ItemID 有效性验证
