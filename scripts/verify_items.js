@@ -1,123 +1,144 @@
 #!/usr/bin/env node
 /**
- * 体检项目核查脚本
- * 检查推荐项目是否在 checkup_items.md 加项包中真实存在
- * 防止 AI 幻觉推荐不存在的项目
+ * 体检项目核查脚本（v2.0）
  *
- * 用法: node verify_items.js 项目1 项目2 项目3 ...
+ * 三重保障：
+ * 1. ItemID 有效性验证（模糊匹配中文名/旧编码）
+ * 2. 冲突检测（同类父子项去重）→ 来自 check_conflicts.js
+ * 3. 核查+去重后的套餐总价
+ *
+ * 用法:
+ *   node verify_items.js Item029 Item035 Item154 Item016
  */
+const { checkConflicts } = require('./check_conflicts.js');
 
 const fs = require('fs');
 const path = require('path');
+const ITEMS_JSON_PATH = path.join(__dirname, '..', 'reference', 'checkup_items.json');
+const ITEMS_MD_PATH   = path.join(__dirname, '..', 'reference', 'checkup_items.md');
 
-const CHECKUP_ITEMS_PATH = path.join(__dirname, '..', 'reference', 'checkup_items.md');
-const SYMPTOM_MAPPING_PATH = path.join(__dirname, '..', 'reference', 'symptom_mapping.json');
+let ITEMS_DB = {};
+let NAME_TO_ID = {};
 
-function loadCheckupItems() {
-  const content = fs.readFileSync(CHECKUP_ITEMS_PATH, 'utf8');
-
-  // 从加项包表格中提取所有项目名称和编码
-  const items = new Map(); // name -> {code, from: 'core'|'addon'}
-
-  // 匹配加项包表格行: | HLZXX0205 | 胃镜 | ...
-  const addonRegex = /^\|\s*HLZXX[\d~\-A-Z]+\s*\|\s*([^|]+?)\s*\|/gm;
-  let match;
-  while ((match = addonRegex.exec(content)) !== null) {
-    const name = match[1].trim();
-    items.set(name, { code: 'addon', from: '加项包' });
+try {
+  const data = JSON.parse(fs.readFileSync(ITEMS_JSON_PATH, 'utf-8'));
+  ITEMS_DB = data.items || {};
+  for (const [id, info] of Object.entries(ITEMS_DB)) {
+    const key = info.name.replace(/\s+/g, ' ').trim().toLowerCase();
+    NAME_TO_ID[key] = id;
   }
-
-  // 也提取核心项目（用于判断是否已在基础套餐中）
-  const coreRegex = /^\|\s*HLZXX[\d~\-A-Z]+\s*\|\s*([^|]+?)\s*\|/gm;
-  // 核心项目部分（表格前面）
-  const coreSection = content.match(/## 核心项目（必查）([\s\S]*?)## 加项包/);
-  if (coreSection) {
-    const coreContent = coreSection[1];
-    let coreMatch;
-    const coreRe = /^\|\s*HLZXX[\d~\-A-Z]+\s*\|\s*([^|]+?)\s*\|/gm;
-    while ((coreMatch = coreRe.exec(coreContent)) !== null) {
-      const name = coreMatch[1].trim();
-      if (!items.has(name)) {
-        items.set(name, { code: 'core', from: '基础套餐' });
-      }
-    }
-  }
-
-  return items;
+} catch (e) {
+  console.error('[ERROR] 无法加载 checkup_items.json:', e.message);
+  process.exit(1);
 }
 
-function normalize(str) {
-  return str.trim().replace(/\s+/g, ' ');
+// 旧编码兼容
+let OLD_CODE_MAP = {};
+try {
+  const md = fs.readFileSync(ITEMS_MD_PATH, 'utf-8');
+  const rows = md.match(/^\|\s*HLZXX[\d~\-A-Z]+\s*\|\s*([^|]+?)\s*\|/gm) || [];
+  for (const row of rows) {
+    const parts = row.split('|');
+    const code = parts[1]?.trim();
+    const name = parts[2]?.trim();
+    if (code && name) OLD_CODE_MAP[name.toLowerCase()] = code;
+  }
+} catch (e) { /* md 不存在不影响 */ }
+
+// ============================================================
+// 第一步：ItemID 有效性验证
+// ============================================================
+function verifyOne(item) {
+  const norm = item.trim();
+  if (norm in ITEMS_DB)
+    return { id: norm, name: ITEMS_DB[norm].name, price: ITEMS_DB[norm].price, status: '✅', from: 'ItemID' };
+  const lowerId = 'item' + norm.replace(/^item/i, '');
+  if (lowerId in ITEMS_DB)
+    return { id: lowerId, name: ITEMS_DB[lowerId].name, price: ITEMS_DB[lowerId].price, status: '✅', from: 'ItemID' };
+  const normLower = norm.toLowerCase();
+  for (const [key, id] of Object.entries(NAME_TO_ID)) {
+    if (key.includes(normLower) || normLower.includes(key))
+      return { id, name: ITEMS_DB[id].name, price: ITEMS_DB[id].price, status: '✅', from: '中文名匹配' };
+  }
+  if (norm.startsWith('HLZXX') && Object.values(OLD_CODE_MAP).includes(norm)) {
+    const name = Object.entries(OLD_CODE_MAP).find(([, v]) => v === norm)?.[0];
+    const id = Object.entries(ITEMS_DB).find(([, v]) => v.name.toLowerCase() === name)?.[0];
+    if (id) return { id, name: ITEMS_DB[id].name, price: ITEMS_DB[id].price, status: '✅', from: '旧编码' };
+  }
+  return { id: norm, status: '❌', hint: '未找到对应项目，请检查 ID 或中文名称' };
 }
 
-function verify(recommendedItems) {
-  const validItems = loadCheckupItems();
-  const results = [];
-  const errors = [];
-
-  for (const item of recommendedItems) {
-    const normalized = normalize(item);
-    const found = Array.from(validItems.entries()).find(([name]) =>
-      normalize(name).includes(normalized) || normalized.includes(normalize(name))
-    );
-
-    if (found) {
-      results.push({
-        item: normalized,
-        status: '✅',
-        found: found[0],
-        from: found[1].from
-      });
-    } else {
-      // 模糊匹配 - 检查是否包含关键词
-      const keywords = ['CT', 'MRI', '超声', '彩超', '镜', '肿瘤', '血糖', '血脂', '肝功能', '肾功能', '心电图', '血压', '骨密度'];
-      const matchedKeyword = keywords.find(k => normalized.includes(k));
-
-      errors.push({
-        item: normalized,
-        status: '❌',
-        matchedKeyword,
-        hint: '⚠️ 不在加项包中，请从 symptom_mapping.json 选取标准组合，或咨询医疗机构'
-      });
-    }
+function verifyAll(rawItems) {
+  const results = [], errors = [];
+  for (const item of rawItems) {
+    const r = verifyOne(item);
+    (r.status === '✅' ? results : errors).push(r);
   }
-
   return { results, errors };
 }
 
+// ============================================================
 // CLI
+// ============================================================
 if (require.main === module) {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    console.log('用法: node verify_items.js 项目1 项目2 项目3 ...');
-    console.log('示例: node verify_items.js 胃镜 头颅CT 心电图');
+    console.log('用法: node verify_items.js Item029 Item035 Item154 Item016 Item083 Item071');
     console.log('');
-    console.log('检查加项包路径:', CHECKUP_ITEMS_PATH);
-    process.exit(1);
+    console.log('--- 演示 ---');
+    const demo = ['Item029', 'Item030', 'Item154', 'Item016', 'Item155', 'Item083', 'Item071', 'Item173', 'Item176', 'Item107', 'Item105'];
+    console.log('输入:', demo.join(', '));
+    const { results, errors } = verifyAll(demo);
+    const { resolved, removed, total } = checkConflicts(results.map(r => r.id));
+
+    console.log('\n━━━ 有效性核查 ━━━');
+    results.forEach(r => console.log(`${r.status} ${r.id}  ${r.name}  ¥${r.price}`));
+    errors.forEach(e => console.log(`${e.status} ${e.id}  → ${e.hint}`));
+
+    if (removed.length) {
+      console.log('\n━━━ 冲突检测（同类父子项，已自动移除）━━━');
+      removed.forEach(r => console.log(`  ❌ ${r.id} ${r.name} → ${r.reason}`));
+    }
+
+    console.log(`\n✅ 有效: ${results.length}  ❌ 无效: ${errors.length}  🔸 冲突移除: ${removed.length}`);
+    console.log(`💰 套餐总价: ¥${total}（仅供参考，以医院实际收费为准）`);
+    console.log('\n去重后项目:', resolved.join(', '));
+    process.exit(errors.length > 0 ? 1 : 1);
+    return;
   }
 
-  const { results, errors } = verify(args);
-
+  const { results, errors } = verifyAll(args);
   console.log('\n🔍 体检项目核查结果\n');
-  console.log('━━━ 有效项目 ━━━');
-  results.forEach(r => {
-    console.log(`${r.status} ${r.item} (${r.from})`);
-  });
 
-  if (errors.length > 0) {
-    console.log('\n━━━ 疑似幻觉项目（不在清单中）━━━');
-    errors.forEach(e => {
-      console.log(`${e.status} ${e.item}`);
-      if (e.hint) console.log(`   ${e.hint}`);
-    });
+  if (results.length) {
+    console.log('━━━ 有效项目 ━━━');
+    results.forEach(r => console.log(`${r.status} ${r.id}  ${r.name}  ¥${r.price}  [${r.from}]`));
+  }
+  if (errors.length) {
+    console.log('\n━━━ 无效项目 ━━━');
+    errors.forEach(e => console.log(`${e.status} ${e.id}  → ${e.hint}`));
   }
 
-  console.log(`\n✅ 有效: ${results.length}  ❌ 无效: ${errors.length}`);
+  const { resolved, removed, total } = checkConflicts(results.map(r => r.id));
+
+  if (removed.length) {
+    console.log('\n━━━ 冲突检测（同类父子项，已自动移除）━━━');
+    removed.forEach(r => console.log(`  ❌ ${r.id} ${r.name} → ${r.reason}`));
+  }
+
+  console.log(`\n✅ 有效: ${results.length}  ❌ 无效: ${errors.length}  🔸 冲突移除: ${removed.length}`);
+  if (results.length) console.log(`💰 套餐总价: ¥${total}（仅供参考，以医院实际收费为准）`);
 
   if (errors.length > 0) {
+    console.log('\n⚠️ 有无效项目，请修正后重新核查');
     process.exit(1);
   }
+  if (removed.length > 0) {
+    console.log('\n去重后项目:', resolved.join(', '));
+    process.exit(1);
+  }
+  process.exit(0);
 }
 
-module.exports = { verify, loadCheckupItems };
+module.exports = { verifyOne, verifyAll, checkConflicts, ITEMS_DB };
