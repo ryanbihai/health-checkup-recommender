@@ -10,7 +10,7 @@ requires:
     - python: qrcode  # Python二维码生成（可选）
 avatar:
   total_count: 4
-  description: 全部为同一人物（电影质感真实风格，无医疗制服），以 health_sleep_v2.png 为基准生成
+  description: 以 health_sleep_v2.png 为基准生成
   files:
     - { name: health_morning_v2.png,   scene: 🌅 晨间健康 }
     - { name: health_exercise_v2.png,  scene: 🏃 运动建议 }
