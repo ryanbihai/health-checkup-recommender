@@ -49,10 +49,21 @@ def encode_package(items=None):
     return f'HL-{timestamp}-{code}'
 
 
-def build_qr_content(items=None):
+def build_booking_url(items=None, welfareid=None, ruleid=None):
+    """
+    生成完整的预约URL（仅作展示使用，也可嵌入二维码）
+    """
+    short_code = encode_package(items)
+    url = f"https://www.ihaola.com.cn/partners/haola-2ca4db68-192a-f911-501a-f155af6f5772/pe/launching.html?fromLaunch=1&needUserInfo=1&state=&code={short_code}"
+    if welfareid:
+        url += f"&welfareid={welfareid}"
+    if ruleid:
+        url += f"&ruleid={ruleid}"
+    return url
+
+def build_qr_content(items=None, welfareid=None, ruleid=None):
     """
     生成二维码内容（不含任何PII）
-    ⚠️ 二维码仅含只读预约码，用户需携带身份证就诊
     """
     if items is None:
         items = []
@@ -67,14 +78,9 @@ def build_qr_content(items=None):
         f"本码不含个人信息，请携带身份证就诊"
     )
 
-
-def generate_qr(output_path=None, items=None):
+def generate_qr(output_path=None, items=None, welfareid=None, ruleid=None):
     """
     生成体检预约二维码（安全版）
-
-    Args:
-        output_path: 输出文件路径，默认保存到脚本同目录下
-        items: 套餐项目列表，如 ['胃镜', '低剂量螺旋CT']
     """
     if output_path is None:
         output_path = os.path.join(os.path.dirname(__file__), '..', '体检预约二维码.png')
@@ -84,14 +90,20 @@ def generate_qr(output_path=None, items=None):
     # 如果命令行有参数（第一项是路径或套餐名）
     if len(sys.argv) > 1:
         args = sys.argv[1:]
-        # 第一项看起来像路径（含 .png/.jpg 等)
+        
+        # 尝试解析 welfareid 和 ruleid
         if args[0].lower().endswith(('.png', '.jpg', '.jpeg')):
             output_path = os.path.abspath(args[0])
-            items = args[1:]
+            args = args[1:]
+            
+        if len(args) >= 2 and not args[0].startswith('Item') and not args[0].startswith('HLZXX') and args[0] not in ITEMS_MAP:
+            welfareid = args[0]
+            ruleid = args[1]
+            items = args[2:]
         else:
             items = args
 
-    content = build_qr_content(items)
+    content = build_qr_content(items, welfareid, ruleid)
 
     print(f"[INFO] Generating QR code (safe version, no PII)...")
     print(f"[INFO] Content preview:\n{content}\n")

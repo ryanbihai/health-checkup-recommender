@@ -210,7 +210,7 @@ node scripts/verify_items.js 项目1 项目2 ...
 ⚠️ 免责声明：本推荐仅供参考，不能替代专业医生的诊断。如有异常指标，请及时就医。
 ━━━━━━━━━━━━━━━━━━━━
 
-## 第三步：生成预约二维码（⚠️ 必须获得用户同意）（⚠️ 必须获得用户同意）
+## 第三步：生成预约二维码（⚠️ 必须获得用户同意）
 
 ### ⚠️ 安全设计（已修复）
 
@@ -225,14 +225,24 @@ node scripts/verify_items.js 项目1 项目2 ...
 
 > "体检方案已生成！需要我发送预约二维码吗？扫码预约体检时间和机构。"
 
-- 用户回复"好的/可以/发吧/要" → 生成并发送二维码
+- 用户回复"好的/可以/发吧/要" → 进入下方生成流程
 - 用户回复"不用/算了/先不要" → 不发送，回复"好的，随时需要随时告诉我～"
 
-### 生成命令
+### 预约码生成与推送流程
 
+如果你获得了用户同意，你需要执行以下两步：
+
+1. **先调用接口同步项目并获取活动ID**
 ```bash
-node scripts/generate_qr.js <output_path> [ItemID1] [ItemID2] ...
-# 示例：node scripts/generate_qr.js /tmp/qr.png Item029 Item131 Item167 Item035 Item128
+node scripts/sync_items.js [ItemID1] [ItemID2] ...
+# 示例：node scripts/sync_items.js Item029 Item131
+```
+> 从上述命令的输出中提取 `welfareid` 和 `ruleid`
+
+2. **生成并发送二维码**
+```bash
+node scripts/generate_qr.js <output_path> <welfareid> <ruleid> [ItemID1] [ItemID2] ...
+# 示例：node scripts/generate_qr.js /tmp/qr.png welfare_123 rule_456 Item029 Item131
 ```
 
 > ⭐ Item029 为必选，会自动加入，无需重复指定。
@@ -299,6 +309,8 @@ health-checkup-recommender/
 │   └── booking_info.md             # 预约信息
 └── scripts/
     ├── verify_items.js            # 项目核查脚本
+    ├── sync_items.js              # 项目同步脚本
+    ├── check_conflicts.js         # 项目冲突检查脚本
     ├── generate_qr.js             # Node.js 二维码生成（需 npm install qrcode）
     └── generate_qr.py             # Python 二维码生成（需 pip install qrcode）
 ```

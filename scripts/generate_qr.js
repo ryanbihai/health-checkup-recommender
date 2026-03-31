@@ -114,23 +114,44 @@ if (require.main === module) {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    console.log('用法: node generate_qr.js [output_path] [userType] [age] [gender] [item1] [item2] ...');
-    console.log('示例: node generate_qr.js output.png P 50 M 胃镜 低剂量螺旋CT');
+    console.log('用法: node generate_qr.js [output_path] [welfareid] [ruleid] [item1] [item2] ...');
+    console.log('示例: node generate_qr.js output.png w123 r456 胃镜 低剂量螺旋CT');
     console.log('');
     console.log('--- 演示模式 ---');
     generateQR(path.join(__dirname, '..', '体检预约_demo.png'), {
       userType: 'P',
       age: '50',
       gender: 'M',
+      welfareid: 'demo_w',
+      ruleid: 'demo_r',
       items: ['胃镜', '低剂量螺旋CT', '前列腺特异抗原'],
     }).catch(e => { console.error(e); process.exit(1); });
     return;
   }
 
   const outputPath = args[0];
-  const [userType, age, gender, ...items] = args.slice(1);
+  const [welfareid, ruleid, ...items] = args.slice(1);
 
-  generateQR(outputPath, { userType, age, gender, items }).catch(e => {
+  // 处理没有 welfareid/ruleid 的旧格式兼容（如果传入的是项目名）
+  let actualItems = items;
+  let actualWelfareid = welfareid;
+  let actualRuleid = ruleid;
+  
+  if (welfareid && (ITEMS_MAP[welfareid] || welfareid.startsWith('Item') || welfareid.startsWith('HLZXX'))) {
+    // 如果 welfareid 位置传入的是体检项目
+    actualItems = [welfareid, ruleid, ...items].filter(Boolean);
+    actualWelfareid = undefined;
+    actualRuleid = undefined;
+  }
+
+  generateQR(outputPath, { 
+    userType: 'U', // 当前安全版不再传递PII
+    age: '??', 
+    gender: 'U',
+    welfareid: actualWelfareid,
+    ruleid: actualRuleid,
+    items: actualItems 
+  }).catch(e => {
     console.error(e);
     process.exit(1);
   });
