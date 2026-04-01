@@ -162,9 +162,9 @@ Top3 高发风险：①肺癌 ②心脑血管 ③肝癌
 ```
 
 ### Step 2d: 代码核查
-
+# 示例：node scripts/verify_items.js item029 item131
 ```bash
-node scripts/verify_items.js Item029 项目1 项目2 ...
+node scripts/verify_items.js item029 item131 ...
 ```
 
 ### Step 2e: 循证输出（强制核查流程）
@@ -318,7 +318,7 @@ node scripts/verify_items.js Item029 项目1 项目2 ...
 # 示例：node scripts/sync_items.js item029 item131
 
 ```bash
-node scripts/sync_items.js 项目1 项目2 ...
+node scripts/sync_items.js item029 item131 ...
 ```
 
 > 从上述命令的输出中提取 `welfareid` 和 `ruleid`
