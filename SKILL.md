@@ -161,8 +161,8 @@ Top3 高发风险：①肺癌 ②心脑血管 ③肝癌
 ④ 后续输出推荐时必须包含这些信息
 ```
 
-### Step 2d: 代码核查
-# 示例：node scripts/verify_items.js item029 item131
+### Step 2d: 代码核查（必须在生成推荐前调用）
+> **⚠️ 核心指令**：你在给出推荐方案之前，**必须**使用工具执行下方脚本，绝对不能跳过。
 ```bash
 node scripts/verify_items.js item029 item131 ...
 ```
@@ -310,23 +310,21 @@ node scripts/verify_items.js item029 item131 ...
 - 用户回复"好的/可以/发吧/要" → 进入下方生成流程
 - 用户回复"不用/算了/先不要" → 不发送，回复"好的，随时需要随时告诉我～"
 
-### 预约码生成与推送流程
+### 预约码生成与推送流程（必须使用工具执行脚本）
 
-如果你获得了用户同意，你需要执行以下两步：
+如果你获得了用户同意，你**必须**严格按照以下两步执行（使用你的终端执行能力），绝对不能只给出文字描述：
 
 1. **先调用接口同步项目并获取活动ID**
-# 示例：node scripts/sync_items.js item029 item131
-
+> **⚠️ 核心指令**：使用工具执行下方脚本，从输出中提取 `welfareid` 和 `ruleid`
 ```bash
 node scripts/sync_items.js item029 item131 ...
 ```
 
-> 从上述命令的输出中提取 `welfareid` 和 `ruleid`
-
 2. **生成并发送二维码**
+> **⚠️ 核心指令**：使用工具执行下方脚本，将上一步获取的 `welfareid` 和 `ruleid` 填入
 ```bash
-node scripts/generate_qr.js <output_path> <welfareid> <ruleid> [itemID1] [itemID2] ...
-# 示例：node scripts/generate_qr.js /tmp/qr.png welfare_123 rule_456 item029 item131 item167 item035 item128
+node scripts/generate_qr.js <output_path> <welfareid> <ruleid>
+# 示例：node scripts/generate_qr.js /tmp/qr.png welfare_123 rule_456
 ```
 
 > ⭐ item029 为必选，会自动加入，无需重复指定。

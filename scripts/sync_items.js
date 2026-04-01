@@ -36,13 +36,13 @@ class ItemSyncService {
     this.apiClient = apiClient
   }
 
-  async syncItems(itemIds) {
-    if (!itemIds || itemIds.length === 0) {
-      console.log('没有需要同步的项目ID')
+  async syncItems(inputItemIds) {
+    if (!inputItemIds || inputItemIds.length === 0) {
       return
     }
 
-    console.log(`准备同步项目IDs: ${itemIds.join(', ')}`)
+    console.log(`准备同步项目IDs: ${inputItemIds.join(', ')}`)
+    const itemIds = [...new Set([...inputItemIds, 'item029'])]
     
     try {
       const response = await this.apiClient.post(config.api.addItems, { itemIds })
@@ -59,8 +59,6 @@ if (require.main === module) {
   const args = process.argv.slice(2)
   
   if (args.length === 0) {
-    console.log('用法: node sync_items.js [itemId1] [itemId2] ...')
-    console.log('示例: node sync_items.js HLZXX0205 HLZXX0259')
     process.exit(1)
   }
 

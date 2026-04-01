@@ -6,18 +6,17 @@
 ## 一、整体结构
 
 ```
-https://www.ihaola.com.cn/partners/haola-2ca4db68-192a-f911-501a-f155af6f5772/pe/launching.html
-?fromLaunch=1
-&needUserInfo=1
-&code=<BASE64URL_ENCODED_PAYLOAD>
-&state=
+https://www.ihaola.com.cn/launch/haola/pe
+?urlsrc=brief
+&welfareid=<xxx>
+&ruleid=<xxx>
 ```
 
-> `code` 参数 = 套餐信息经 Base64URL 编码后的字符串
+> ⚠️ 已废弃原有的 Base64URL 编码 payload 的复杂格式。现在的二维码直接生成业务要求的链接。
 
 ---
 
-## 二、Payload 结构
+## 二、旧版 Payload 结构（仅供参考）
 
 ```
 [ver(2)][userType(1)][age(2)][gender(1)][risks(0-3)][n(1)][items(3n)]
