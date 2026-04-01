@@ -1,4 +1,12 @@
+const fs = require('fs')
+const path = require('path')
+
 const getEnv = () => {
+  const debugFilePath = path.join(__dirname, '..', 'DEBUG_MODE')
+  if (fs.existsSync(debugFilePath)) {
+    return 'dev'
+  }
+
   const envArg = process.argv.find(arg => arg.startsWith('--env'))
   if (!envArg) return process.env.ENV || 'prod'
   return envArg.includes('=') ? envArg.split('=')[1] : process.argv[process.argv.indexOf(envArg) + 1]
