@@ -34,29 +34,37 @@ def load_config():
 
 def get_user_id():
     """
-    获取或生成持久化用户ID。
-    首次使用时自动生成并写入 config.json，之后复用。
+    获取或生成持久化用户ID，优先级：
+    1. .env 中的 USER_ID（本地测试用）
+    2. config.json 中的 user_id
+    3. 新生成并写入 config.json
     """
     import uuid
-    config = load_config()
-    if not config:
-        # 没有配置文件，临时生成
-        return str(uuid.uuid4())[:8]
 
-    user_id = config.get("user_id")
-    if not user_id:
-        user_id = str(uuid.uuid4())[:8]
-        config["user_id"] = user_id
-        # 写回去（如果主 config 文件存在）
+    # 优先级1：.env 文件
+    env_path = os.path.join(SKILL_DIR, ".env")
+    if os.path.exists(env_path):
+        with open(env_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("USER_ID="):
+                    val = line.split("=", 1)[1].strip()
+                    if val:
+                        return val
+
+    # 优先级2：config.json
+    config = load_config()
+    if config and config.get("user_id"):
+        return config["user_id"]
+
+    # 优先级3：生成新ID并存入config.json
+    new_id = str(uuid.uuid4())[:8]
+    if config:
+        config["user_id"] = new_id
         if os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 json.dump(config, f, ensure_ascii=False, indent=2)
-        else:
-            alt = os.path.join(os.path.dirname(SKILL_DIR), "expert-referral-config.json")
-            if os.path.exists(alt):
-                with open(alt, "w", encoding="utf-8") as f:
-                    json.dump(config, f, ensure_ascii=False, indent=2)
-    return user_id
+    return new_id
 
 def save_pending(user_session_key, user_message):
     with open(PENDING_FILE, "w", encoding="utf-8") as f:
