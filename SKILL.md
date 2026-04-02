@@ -1,39 +1,35 @@
-***
-
-## name: health-checkup-recommender
-
-## description: AI健康体检推荐服务。根据年龄/性别/症状/家族史推荐体检项目，循证依据，代码核查确保项目真实。二维码预约需用户明确同意，不自动发送。头像图片需单独配置。
-
-## **触发词：体检,身体检查,检查,体检推荐, 体检项目, 个性化体检, 定制体检, 体检建议, 全身体检**
-
+---
+name: health-checkup-recommender
+description: AI健康体检推荐服务。根据年龄/性别/症状/家族史推荐体检项目，循证依据，代码核查确保项目真实。二维码预约需用户明确同意，不自动发送。头像图片需单独配置。
+  **触发词：体检, 身体检查, 检查, 体检推荐, 体检项目, 个性化体检, 定制体检, 体检建议, 全身体检**
 requires:
-config\_paths:
-\- USER.md  # 用户档案路径（需用户授权读取）
-runtime\_deps:
-\- npm: qrcode  # Node.js 二维码生成
-\- python: qrcode  # Python二维码生成（可选）
+  config_paths:
+    - USER.md
+  runtime_deps:
+    - npm: qrcode
+    - python: qrcode
 avatar:
-total\_count: 4
-description: 以 health\_sleep\_v2.png 为基准生成
-files:
-\- { name: health\_morning\_v2.png,   scene: 🌅 晨间健康 }
-\- { name: health\_exercise\_v2.png,  scene: 🏃 运动建议 }
-\- { name: health\_sleep\_v2.png,     scene: 🌙 睡眠关怀 }
-\- { name: health\_checkup\_v2.png,   scene: 🩺 体检医生 }
-location: 头像在 workspace/avatars/ 目录，需用户手动复制到skill目录
-character:
-identity: EastAsian\_warm\_professional\_female
-traits: \[温暖, 专业, 可信赖, 智慧, 温柔]
-base: health\_sleep\_v2.png
+  total_count: 4
+  description: 以 health_sleep_v2.png 为基准生成
+  files:
+    - { name: health_morning_v2.png,   scene: 🌅 晨间健康 }
+    - { name: health_exercise_v2.png,  scene: 🏃 运动建议 }
+    - { name: health_sleep_v2.png,     scene: 🌙 睡眠关怀 }
+    - { name: health_checkup_v2.png,   scene: 🩺 体检医生 }
+  location: 头像在 workspace/avatars/ 目录，需用户手动复制到skill目录
+  character:
+    identity: EastAsian_warm_professional_female
+    traits: [温暖, 专业, 可信赖, 智慧, 温柔]
+    base: health_sleep_v2.png
 privacy:
-third\_party\_booking: true
-third\_party\_domain: "[www.ihaola.com.cn](http://www.ihaola.com.cn)"
-qr\_contains\_personal\_data: false  # ✅ 已修复：二维码不包含任何可识别PII
-qr\_fields: \[]  # ✅ 已修复：二维码仅含只读预约码，无用户信息
-auto\_send\_qr: false  # 必须用户明确同意才能发送
-consent\_required: true
-data\_flow: "二维码仅含只读预约摘要，用户需携带身份证就诊；如需提前预约，用户自行到 [www.ihaola.com.cn](http://www.ihaola.com.cn) 填写信息"
-----------------------------------------------------------------------------------------------------
+  third_party_booking: true
+  third_party_domain: "www.ihaola.com.cn"
+  qr_contains_personal_data: false
+  qr_fields: []
+  auto_send_qr: false
+  consent_required: true
+  data_flow: "二维码仅含只读预约摘要，用户需携带身份证就诊；如需提前预约，用户自行到 www.ihaola.com.cn 填写信息"
+---
 
 # 体检项目推荐技能
 
@@ -281,7 +277,7 @@ node scripts/verify_items.js item029 item131 ...
 
 **⚠️ 保底 ¥400 规则：服务商要求套餐不低于 ¥400。若推荐总价不足 ¥400，自动根据用户画像（年龄/性别/既往病史）补充高风险相关项目。**
 
-````
+```
 【风险评估】{年龄}岁{性别}：{Top3高发风险}
 备注：{结合用户实际情况和家族史调整}
 
@@ -329,9 +325,9 @@ node scripts/verify_items.js item029 item131 ...
 > **⚠️ 核心指令**：使用工具执行下方脚本，从输出中提取 `welfareid` 和 `ruleid`
 ```bash
 node scripts/sync_items.js item029 item131 ...
-````
+```
 
-1. **生成并发送二维码**
+2. **生成并发送二维码**
 
 > **⚠️ 核心指令**：使用工具执行下方脚本，将上一步获取的 `welfareid` 和 `ruleid` 填入
 
