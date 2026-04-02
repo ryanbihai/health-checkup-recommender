@@ -1,4 +1,5 @@
 {
   "cs_webhook_url": "https://pe-t.ihaola.com.cn/skill/api/send_message",
-  "cs_poll_url": "https://pe-t.ihaola.com.cn/skill/api/get_reply?user_id=USER_SESSION_KEY"
+  "cs_poll_url": "https://pe-t.ihaola.com.cn/skill/api/get_reply?user_id=USER_SESSION_KEY",
+  "user_id": "9da8fc8f"
 }

@@ -32,10 +32,37 @@ def load_config():
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
+def get_user_id():
+    """
+    获取或生成持久化用户ID。
+    首次使用时自动生成并写入 config.json，之后复用。
+    """
+    import uuid
+    config = load_config()
+    if not config:
+        # 没有配置文件，临时生成
+        return str(uuid.uuid4())[:8]
+
+    user_id = config.get("user_id")
+    if not user_id:
+        user_id = str(uuid.uuid4())[:8]
+        config["user_id"] = user_id
+        # 写回去（如果主 config 文件存在）
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(config, f, ensure_ascii=False, indent=2)
+        else:
+            alt = os.path.join(os.path.dirname(SKILL_DIR), "expert-referral-config.json")
+            if os.path.exists(alt):
+                with open(alt, "w", encoding="utf-8") as f:
+                    json.dump(config, f, ensure_ascii=False, indent=2)
+    return user_id
+
 def save_pending(user_session_key, user_message):
     with open(PENDING_FILE, "w", encoding="utf-8") as f:
         json.dump({
-            "user_session_key": user_session_key,
+            "user_id": get_user_id(),      # 用持久化 user_id
+            "user_session_key": user_session_key,  # 同时保留原始 session_key
             "original_message": user_message,
             "created_at": datetime.now().isoformat(),
             "poll_count": 0
@@ -128,14 +155,15 @@ def respond_experts(query):
 # 联系客服
 # ─────────────────────────────────────────────
 
-def notify_cs(user_query, session_key):
-    """POST 消息给客服"""
+def notify_cs(user_query, session_key=None):
+    """POST 消息给客服，user_id 使用持久化 ID"""
     config = load_config()
     if not config or not config.get("cs_webhook_url"):
         return {"ok": False, "error": "未配置 cs_webhook_url"}
 
+    user_id = get_user_id()
     payload = json.dumps({
-        "user_id": session_key,
+        "user_id": user_id,
         "question": user_query
     }, ensure_ascii=False).encode("utf-8")
 
@@ -153,13 +181,14 @@ def notify_cs(user_query, session_key):
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
-def poll_cs_reply(session_key):
-    """GET 轮询客服回复"""
+def poll_cs_reply(session_key=None):
+    """GET 轮询客服回复，user_id 使用持久化 ID"""
     config = load_config()
     if not config or not config.get("cs_poll_url"):
         return {"ok": False, "reply": None}
 
-    poll_url = config["cs_poll_url"].replace("USER_SESSION_KEY", session_key)
+    user_id = get_user_id()
+    poll_url = config["cs_poll_url"].replace("USER_SESSION_KEY", user_id)
     req = urllib.request.Request(poll_url, method="GET")
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
@@ -175,10 +204,10 @@ def check_and_push_reply():
     返回：str 有回复内容 | None 无回复
     """
     ctx = load_pending()
-    if not ctx or not ctx.get("user_session_key"):
+    if not ctx or not ctx.get("user_id"):
         return None
 
-    result = poll_cs_reply(ctx["user_session_key"])
+    result = poll_cs_reply(ctx["user_id"])
     if result.get("ok") and result.get("reply"):
         clear_pending()
         return f"💬 **客服回复**：\n\n{result['reply']}"
@@ -203,7 +232,7 @@ def handle(query, session_key=None, action=None):
     - action="poll_reply" → 检查客服回复
     """
     if action == "notify_cs":
-        result = notify_cs(query, session_key)
+        result = notify_cs(query, session_key=get_user_id())
         if result.get("ok"):
             save_pending(session_key, query)
             return (

@@ -1,4 +1,5 @@
 {
   "cs_webhook_url": "https://your-server.com/skill/api/send_message",
-  "cs_poll_url": "https://your-server.com/skill/api/get_reply?user_id=USER_SESSION_KEY"
+  "cs_poll_url": "https://your-server.com/skill/api/get_reply?user_id=USER_SESSION_KEY",
+  "user_id": "首次使用时自动生成，无需手动填写"
 }
