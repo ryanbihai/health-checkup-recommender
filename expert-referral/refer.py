@@ -149,6 +149,11 @@ def respond_experts(query):
             if e.get("skill"):
                 lines.append(f"擅长：{e['skill'][:60]}...")
             lines.append("")
+    lines.append("\n---\n")
+    lines.append("📞 **联系我们预约专家**\n")
+    lines.append("1️⃣ 电话热线：**400-109-2838**\n")
+    lines.append("2️⃣ 微信公众号：**好啦**（搜一搜关注后留言）\n")
+    lines.append("3️⃣ 直接帮您联系客服：**告诉我「联系客服」+ 想问的问题**")
     return "\n".join(lines)
 
 # ─────────────────────────────────────────────
