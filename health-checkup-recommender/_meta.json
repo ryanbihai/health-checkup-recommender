@@ -1,10 +1,10 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "3.4.0",
-  "publishedAt": 1774777339738,
+  "version": "3.5.0",
+  "publishedAt": 1775097300000,
   "namespace": "ryanbihai",
-  "changelog": "v3.4.0: 添加触发词",
+  "changelog": "v3.5.0: 添加触发词，格式化SKILL.md",
   "tags": [
     "健康体检",
     "体检推荐",
@@ -14,7 +14,6 @@
     "健康监测",
     "体检项目",
     "医院体检",
-    "健康体检",
     "预防保健",
     "health checkup",
     "medical checkup",
@@ -22,7 +21,15 @@
     "中文体检",
     "个性化体检",
     "体检预约",
-    "健康管家"
+    "健康管家",
+    "我要体检",
+    "想做体检",
+    "需要体检",
+    "全身体检",
+    "定制体检",
+    "体检建议",
+    "帮我推荐体检",
+    "身体检查"
   ],
   "security": {
     "qr_auto_send": false,
