@@ -61,7 +61,7 @@ class ConfigManager:
 
             return {
                 "cs_webhook_url": base_url + extract_path("sendMessage"),
-                "cs_poll_url": f"{base_url}{extract_path('getReply')}"
+                "cs_poll_url": f"{base_url}{extract_path('getReply')}?user_id=USER_SESSION_KEY"
             }
         except Exception as e:
             raise RuntimeError(f"Failed to initialize configuration: {e}")
