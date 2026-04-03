@@ -2,6 +2,7 @@
 name: china-top-doctor-referral
 version: 1.0.0
 description: 三甲医院主任/副主任级医生推荐。可按科室/疾病/症状匹配顶级专家，并预约其在和睦家、怡德等高端私立医院的门诊。同时支持联系专属客服跟进预约。
+homepage: https://www.ihaola.com.cn
 metadata:
   category: utility
   api_base: https://pe-t.ihaola.com.cn
@@ -16,9 +17,19 @@ requires:
   tools:
     - cron
 privacy:
-  data_flow: "专家数据来自本地 reference/experts.json；客服消息通过 config/api.js 中的接口中转"
+  data_flow: |
+    本 Skill 处理两类数据：
+    1. 专家搜索：仅使用本地 experts.json，不涉及外部传输
+    2. 联系客服：用户消息通过 config/api.js 配置的接口转发至好啦客服系统（pe-t.ihaola.com.cn），用于人工客服回复用户咨询
+  consent_required: true
+  third_party:
+    - name: 好啦
+      domain: pe-t.ihaola.com.cn
+      purpose: 人工客服消息转发与回复
+      policy: https://www.ihaola.com.cn/privacy
 author:
   name: haola
+  contact: https://www.ihaola.com.cn
 license: MIT
 ---
 
@@ -189,6 +200,36 @@ CustomerService.notify(query, session_key) → dict
 CustomerService.poll_and_push() → str
   # 检查客服回复并处理状态流转
 ```
+
+---
+
+## 安装前须知
+
+### 数据传输说明
+
+⚠️ **重要**：使用"联系客服"功能时，用户提交的消息将转发至好啦客服系统（pe-t.ihaola.com.cn）。
+
+**涉及数据传输的功能**：
+- ✅ 专家搜索 — 仅使用本地 `experts.json`，无外部传输
+- ⚠️ 联系客服 — 用户消息转发至第三方（需用户知情同意）
+
+### 前置要求
+
+1. **配置文件**：安装后需配置 `config/api.js`，包含好啦客服接口地址
+2. **Cron/Heartbeat**：如需自动接收客服回复，需配置定时轮询任务
+3. **用户同意**：使用联系客服功能前，请确保用户知晓消息将被转发至人工客服
+
+### 隐私保护建议
+
+- 使用测试/非敏感数据测试功能
+- 在隔离环境中运行，监控网络流量
+- 如需用于真实用户，请获取明确授权
+
+### 信任验证
+
+- **官网**：https://www.ihaola.com.cn
+- **隐私政策**：https://www.ihaola.com.cn/privacy
+- **客服电话**：400-109-2838
 
 ---
 
