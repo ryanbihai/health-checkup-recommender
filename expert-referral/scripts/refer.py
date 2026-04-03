@@ -23,20 +23,10 @@ CONFIG_JS_PATH = os.path.join(SKILL_DIR, "config", "api.js")
 
 # 确保 pending_ctx.json 存在（用于存储持久化 user_id 和 咨询状态）
 if not os.path.exists(PENDING_FILE):
+    _initial_id = str(uuid.uuid4())[:8]
     try:
-        # 优先尝试从 .env 获取本地测试 ID
-        env_id = None
-        env_path = os.path.join(SKILL_DIR, ".env")
-        if os.path.exists(env_path):
-            with open(env_path, encoding="utf-8") as f:
-                for line in f:
-                    if line.startswith("USER_ID="):
-                        env_id = line.split("=", 1)[1].strip()
-                        break
-        
-        initial_id = env_id if env_id else str(uuid.uuid4())[:8]
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
-            json.dump({"user_id": initial_id}, f, ensure_ascii=False, indent=2)
+            json.dump({"user_id": _initial_id}, f, ensure_ascii=False, indent=2)
     except:
         pass
 
@@ -46,7 +36,7 @@ if not os.path.exists(PENDING_FILE):
 
 class ConfigManager:
     """负责从 JS 文件或环境变量中动态加载配置"""
-    
+
     @staticmethod
     @lru_cache(maxsize=1)
     def load():
@@ -57,14 +47,12 @@ class ConfigManager:
         try:
             with open(CONFIG_JS_PATH, encoding="utf-8") as f:
                 content = f.read()
-            
-            # 提取 baseUrl (匹配 activeEnv 赋值后的最终值)
+
             base_urls = re.findall(r"baseUrl:\s*['\"]([^'\"]+)['\"]", content)
             if not base_urls:
                 raise ValueError(f"CRITICAL: baseUrl not found in {CONFIG_JS_PATH}")
             base_url = base_urls[-1]
-            
-            # 提取 api 路径
+
             def extract_path(key):
                 match = re.search(rf"{key}:\s*['\"]([^'\"]+)['\"]", content)
                 if not match:
@@ -76,7 +64,6 @@ class ConfigManager:
                 "cs_poll_url": f"{base_url}{extract_path('getReply')}?user_id=USER_SESSION_KEY"
             }
         except Exception as e:
-            # 配置加载失败是致命错误，直接抛出，不再返回空字典
             raise RuntimeError(f"Failed to initialize configuration: {e}")
 
 # ─────────────────────────────────────────────
@@ -85,34 +72,6 @@ class ConfigManager:
 
 class StateManager:
     """负责持久化状态（user_id 和咨询上下文）的管理"""
-
-    @staticmethod
-    def _get_env_user_id():
-        """尝试从 .env 获取本地测试 ID"""
-        env_path = os.path.join(SKILL_DIR, ".env")
-        if os.path.exists(env_path):
-            with open(env_path, encoding="utf-8") as f:
-                for line in f:
-                    if line.startswith("USER_ID="):
-                        return line.split("=", 1)[1].strip()
-        return None
-
-    @classmethod
-    def get_user_id(cls):
-        """获取持久化用户ID，保证唯一性"""
-        # 1. 优先使用环境变量/本地测试 ID
-        env_id = cls._get_env_user_id()
-        if env_id: return env_id
-
-        # 2. 其次使用已保存的 ID
-        ctx = cls.load_pending()
-        if ctx and ctx.get("user_id"):
-            return ctx["user_id"]
-
-        # 3. 如果没有找到 ID，生成并持久化新 ID
-        new_id = str(uuid.uuid4())[:8]
-        cls.save_pending(user_id=new_id)
-        return new_id
 
     @staticmethod
     def load_pending():
@@ -130,10 +89,9 @@ class StateManager:
         """更新并保存咨询上下文"""
         ctx = StateManager.load_pending() or {}
         ctx.update(kwargs)
-        # 确保基础字段存在
         if "user_id" not in ctx:
             ctx["user_id"] = str(uuid.uuid4())[:8]
-        
+
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
             json.dump(ctx, f, ensure_ascii=False, indent=2)
 
@@ -159,27 +117,29 @@ class ExpertService:
 
     @classmethod
     def search(cls, query):
-        if not query: return "请输入您想搜索的科室或疾病。"
-        
+        if not query:
+            return "请输入您想搜索的科室或疾病。"
+
         data = cls._load_data()
         experts = data["experts"]
         keywords = data.get("big3_keywords", [])
 
-        # 评分系统
         scored = []
         q = query.lower()
         for e in experts:
             score = 0
-            if e.get("dept")  and q in e["dept"].lower():  score += 10
-            if e.get("name")  and q in e["name"].lower():  score += 8
-            if e.get("skill") and q in e["skill"].lower(): score += 5
+            if e.get("dept") and q in e["dept"].lower():
+                score += 10
+            if e.get("name") and q in e["name"].lower():
+                score += 8
+            if e.get("skill") and q in e["skill"].lower():
+                score += 5
             if score > 0:
                 scored.append((score, e))
-        
+
         scored.sort(key=lambda x: -x[0])
         top = [e for _, e in scored[:24]]
-        
-        # 分类：优先展示合作专家 (非 big3)
+
         primary = [e for e in top if not any(k in (e.get("main_hospital") or "") for k in keywords)]
         secondary = [e for e in top if e not in primary]
 
@@ -192,14 +152,16 @@ class ExpertService:
             lines.append("✅ **可直接预约的专家**\n")
             for e in primary:
                 lines.append(f"【{e['city']}·{e['dept']}】{e['name']} | {e.get('title','')} | 出诊：{e['practice_hospital']} | {e['schedule']} | 诊费：{e.get('fee','详询')}")
-                if e.get("skill"): lines.append(f"擅长：{e['skill'][:80]}...")
+                if e.get("skill"):
+                    lines.append(f"擅长：{e['skill'][:80]}...")
                 lines.append("")
-        
+
         if secondary:
             lines.append("\n📋 **专家背景介绍（仅供了解）**\n")
             for e in secondary:
                 lines.append(f"【{e['city']}·{e['dept']}】{e['name']} | {e.get('title','')} | 原单位：{e.get('main_hospital','')} | 出诊：{e['practice_hospital']}")
-                if e.get("skill"): lines.append(f"擅长：{e['skill'][:60]}...")
+                if e.get("skill"):
+                    lines.append(f"擅长：{e['skill'][:60]}...")
                 lines.append("")
 
         lines.extend([
@@ -216,62 +178,97 @@ class ExpertService:
 
 class CustomerService:
     @staticmethod
-    def notify(query, session_key):
+    def notify(user_id, query):
+        """
+        发送消息给客服。
+
+        Args:
+            user_id: 真实用户身份标识。
+                     - Feishu 渠道：使用 open_id（如 ou_xxx）
+                     - 其他渠道：使用该渠道的用户唯一标识
+                     - ⚠️ 禁止自行杜撰！必须从当前对话上下文中提取真实用户身份。
+            query: 用户发送给客服的消息内容。
+        """
         cfg = ConfigManager.load()
-        user_id = StateManager.get_user_id()
         payload = json.dumps({"user_id": user_id, "question": query}, ensure_ascii=False).encode("utf-8")
-        
-        req = urllib.request.Request(cfg["cs_webhook_url"], data=payload, headers={"Content-Type": "application/json"}, method="POST")
+
+        req = urllib.request.Request(
+            cfg["cs_webhook_url"],
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
         with urllib.request.urlopen(req, timeout=10) as resp:
-            StateManager.save_pending(user_session_key=session_key, original_message=query, created_at=datetime.now().isoformat(), poll_count=0, saved_reply=None)
+            # 持久化：user_id 是发送给外部 API 的真实身份，必须保存
+            StateManager.save_pending(
+                user_id=user_id,
+                original_message=query,
+                created_at=datetime.now().isoformat(),
+                poll_count=0,
+                saved_reply=None
+            )
             return {"ok": True}
 
     @staticmethod
     def poll_and_push():
-        ctx = StateManager.load_pending()
-        if not ctx or not ctx.get("user_session_key"): return None
+        """
+        轮询客服回复。
 
-        # 如果有已保存的回复（上次 poll 拿到了但 delivery 还没成功），直接返回
-        saved_reply = ctx.get("saved_reply")
-        if saved_reply:
-            return f"💬 客服回复：\n\n{saved_reply}"
+        读取 pending_ctx.json 中存储的 user_id，发给外部 API 查询回复。
+        有回复则返回内容（由调用方负责推送给用户）。
+        没回复返回 None。
+        """
+        ctx = StateManager.load_pending()
+        if not ctx or not ctx.get("user_id"):
+            return None
 
         cfg = ConfigManager.load()
         poll_url = cfg.get("cs_poll_url", "").replace("USER_SESSION_KEY", ctx["user_id"])
-        
+
         try:
-            with urllib.request.urlopen(poll_url, timeout=10) as resp:
+            req = urllib.request.Request(poll_url, headers={"User-Agent": "OpenClaw-Agent"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 reply = (data.get("data", {}) or {}).get("reply") or data.get("reply")
-                
-                if reply:
-                    # API 是一次性 的：拿到回复后服务器就删除
-                    # 必须先存起来，后续 cron 直接返回存好的内容，不重复调 API
-                    StateManager.save_pending(saved_reply=reply)
-                    push_data = json.dumps({"session_key": ctx["user_session_key"], "content": f"💬 **客服回复**：\n\n{reply}"}, ensure_ascii=False)
-                    print(f"PUSH_MESSAGE:{push_data}")
-                    return f"💬 客服回复：\n\n{reply}"
-        except Exception:
-            pass
 
-        # 轮询计数与清理（没有已保存回复时才计数）
+                if reply:
+                    # 拿到回复后清理会话，防止重复推送
+                    StateManager.clear_session()
+                    return f"💬 **客服回复**：\n\n{reply}"
+
+        except Exception as e:
+            print(f"Poll Error: {e}", file=sys.stderr)
+
+        # 轮询计数：超过 60 次（约 1 小时）自动清理
         count = ctx.get("poll_count", 0) + 1
-        if count > 30: StateManager.clear_session()
-        else: StateManager.save_pending(poll_count=count)
+        if count > 60:
+            StateManager.clear_session()
+        else:
+            StateManager.save_pending(poll_count=count)
+
         return None
 
 # ─────────────────────────────────────────────
 # 统一入口
 # ─────────────────────────────────────────────
 
-def handle(query, session_key=None, action=None):
+def handle(query=None, user_id=None, action=None):
+    """
+    skill 主入口。
+
+    参数：
+        query: 用户消息（发给客服的内容）
+        user_id: 真实用户身份（必须从当前对话上下文中提取，禁止杜撰）
+        action: "notify_cs" | "poll_reply" | None（默认搜索专家）
+    """
     if action == "notify_cs":
-        res = CustomerService.notify(query, session_key)
+        if not user_id:
+            return "⚠️ 发送失败：未提供用户身份标识。请从当前对话上下文中提取真实的 user_id（Feishu 为 open_id，其他渠道为对应用户标识），然后重试。"
+        res = CustomerService.notify(user_id, query)
         if res.get("ok"):
-            # 提示用户配置高频心跳以保证回复时效性
             return (
                 "✅ 您的请求已转达给客服，系统将自动推送回复，请稍候……\n"
-                "*(提示：本技能依赖全局心跳任务来轮询客服回复。请确保您的 Agent 或工作区配置了频率较高的 cron/heartbeat 任务（如 1~5 分钟一次），否则回复可能会延迟。)*"
+                "*(提示：本技能依赖全局心跳/cron 任务轮询客服回复。如未配置，回复可能会有延迟。)*"
             )
         return f"⚠️ 消息发送失败：{res.get('error')}"
 
@@ -280,13 +277,43 @@ def handle(query, session_key=None, action=None):
 
     return ExpertService.search(query)
 
-if __name__ == "__main__":
-    args = sys.argv[1:]
-    if not args:
-        print("用法: python3 refer.py [search|notify_cs|poll_reply] [参数...]")
-        sys.exit(0)
+# ─────────────────────────────────────────────
+# CLI 入口
+# ─────────────────────────────────────────────
 
-    cmd = args[0]
-    if cmd == "search": print(ExpertService.search(" ".join(args[1:])))
-    elif cmd == "notify_cs": print(handle(" ".join(args[1:2]), args[2] if len(args)>2 else "debug_user", "notify_cs"))
-    elif cmd == "poll_reply": print(handle(None, action="poll_reply") or "（暂无客服回复）")
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="专家推荐 Skill 引擎")
+    sub = parser.add_subparsers(dest="cmd")
+
+    # search 子命令
+    p_search = sub.add_parser("search", help="搜索专家")
+    p_search.add_argument("query", nargs="*", help="搜索关键词（科室/疾病/症状）")
+
+    # notify_cs 子命令
+    p_notify = sub.add_parser("notify_cs", help="发送客服消息")
+    p_notify.add_argument("--user_id", required=True, help="真实用户身份标识（必须）")
+    p_notify.add_argument("--message", required=True, help="发给客服的消息内容")
+
+    # poll_reply 子命令（供 cron 调用）
+    sub.add_parser("poll_reply", help="轮询客服回复")
+
+    args = parser.parse_args()
+
+    if args.cmd == "search":
+        q = " ".join(args.query) if args.query else ""
+        print(ExpertService.search(q))
+
+    elif args.cmd == "notify_cs":
+        result = handle(query=args.message, user_id=args.user_id, action="notify_cs")
+        print(result)
+
+    elif args.cmd == "poll_reply":
+        result = handle(action="poll_reply")
+        if result:
+            print(result)
+        # 无回复时保持沉默，不输出——这样 cron announce 不会误触发
+
+    else:
+        parser.print_help()
