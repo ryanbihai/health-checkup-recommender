@@ -16,8 +16,8 @@ const envMap = {
     baseUrl: 'https://pe-t.ihaola.com.cn'
   },
   prod: {
-    domain: 'https://www.ihaola.com.cn',
-    baseUrl: 'https://pe.ihaola.com.cn'
+    domain: 'https://t.ihaola.com.cn',
+    baseUrl: 'https://pe-t.ihaola.com.cn'
   }
 }
 

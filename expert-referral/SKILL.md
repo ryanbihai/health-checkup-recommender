@@ -4,13 +4,13 @@ description: 专家推荐。根据科室/疾病/症状推荐合作专家，优�
   **触发词：专家推荐, 预约专家, 挂号, 看哪个医生, 找哪个专家, 推荐医生, 想看, 要挂号, 联系客服**
 requires:
   config_paths:
-    - config.json  # 客服消息接口配置
+    - config/api.js  # 客服消息接口配置
   runtime_deps:
     - python: openpyxl  # 如需重新解析 xlsx 文件
   tools:
     - cron   # 用于创建客服回复轮询任务
 privacy:
-  data_flow: "专家数据来自本地 experts.json；客服消息通过 config.json 中的接口中转"
+  data_flow: "专家数据来自本地 reference/experts.json；客服消息通过 config/api.js 中的接口中转"
 ---
 
 # 专家推荐 & 联系客服
@@ -22,7 +22,7 @@ privacy:
 - **不主推**：大三甲医院（协和控制、北大、复旦、交大系等）的专家，其背景仅作为介绍
 
 ### 数据来源
-三个 Excel 文件整合（`experts.json`，共 228 位专家）：
+三个 Excel 文件整合（`reference/experts.json`，共 228 位专家）：
 1. `怡德医院专家信息列表.xlsx` — 北京怡德医院出诊专家
 2. `上海和睦家 外院专家 合作列表202402.xlsx` — 上海和睦家合作专家
 3. `SHM外院专家 合作列表202402.xlsx` — 和睦家浦西合作专家
@@ -69,17 +69,12 @@ privacy:
 系统自动转发给客服，并每分钟自动检查回复，有回复直接推送。
 
 ### 技术实现（自动轮询）
-1. 调用 `refer.handle("联系客服 XXX", session_key, action="notify_cs")` → 发送消息并存入 `pending_ctx.json`
-2. HEARTBEAT.md 定时自动检查 `pending_ctx.json` → 调用 `refer.poll_cs_reply()` → 有回复则通过机器人主动推送
+1. 调用 `scripts/refer.py` 中的 `handle("联系客服 XXX", session_key, action="notify_cs")` → 发送消息并存入 `pending_ctx.json`
+2. `HEARTBEAT.md` 定时自动检查 `pending_ctx.json` → 调用 `scripts/refer.py` 中的 `handle("poll_reply", session_key, action="poll_reply")` → 有回复则通过机器人主动推送
 3. `user_id` 为用户唯一标识，持久化存储在 `pending_ctx.json` 中，确保跨会话的一致性。
 
-### 配置（config.json）
-```json
-{
-  "cs_webhook_url": "https://your-server.com/skill/api/send_message",
-  "cs_poll_url": "https://your-server.com/skill/api/get_reply?user_id=USER_SESSION_KEY"
-}
-```
+### 配置（config/api.js）
+请确保 `config/api.js` 中配置了正确的 `baseUrl` 和 `api` 路径。系统会自动解析该文件。
 
 ### 接口说明
 | 接口 | 方法 | 字段 | 说明 |
@@ -98,29 +93,34 @@ privacy:
 ```
 skills/expert-referral/
 ├── SKILL.md              # 本文件
-├── refer.py              # 推荐引擎 + 客服接口
-├── experts.json           # 专家数据库
-├── config.json            # 接口配置（用户本地填写）
+├── HEARTBEAT.md          # 自动轮询任务配置
+├── reference/
+│   └── experts.json      # 专家数据库
+├── scripts/
+│   └── refer.py          # 推荐引擎 + 客服接口
+├── config/
+│   └── api.js            # 接口配置
 └── images/
     └── haola_qr.jpg     # 公众号二维码（用户自备）
 ```
 
-## refer.py 函数接口
+## scripts/refer.py 函数接口
 
 ```python
 # 专家推荐
-refer.respond_experts(query) → str  # 返回格式化推荐结果
+ExpertService.search(query) → tuple  # 返回 (主推列表, 次推列表)
+ExpertService._render_response(primary, secondary) → str # 格式化输出
 
 # 联系客服
-refer.handle(query, session_key, action="notify_cs") → str
-  # 发送消息给客服，自动启动轮询 cron
-  # action="poll_reply" 时：检查回复，有则返回内容
+handle(query, session_key, action="notify_cs") → str
+  # 发送消息给客服
+  # action="poll_reply" 时：检查回复，有则返回内容并清除状态
 
-refer.poll_cs_reply(session_key) → dict
-  # {"ok": True/False, "reply": "回复内容或None"}
+CustomerService.poll_and_push() → str
+  # 检查是否有客服回复，并处理状态流转
 
-refer.notify_cs(message, session_key) → dict
-  # {"ok": True/False, "error": "..."}
+CustomerService.notify(query, session_key) → str
+  # 组装请求发给客服接口
 ```
 
 ## 依赖

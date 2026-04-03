@@ -16,14 +16,14 @@ jobs:
     steps:
       - name: 检查客服回复
         # 核心逻辑：
-        # 1. 运行 refer.py poll_reply 检查是否有回复
+        # 1. 运行 scripts/refer.py poll_reply 检查是否有回复
         # 2. 如果没有回复，则进入循环轮询（每分钟一次，持续 30 次）
         # 这样可以在不修改用户全局配置的情况下，实现高频轮询
         run: |
           for i in {1..30}; do
-            REPLY=$(python3 refer.py poll_reply)
+            REPLY=$(python3 scripts/refer.py poll_reply)
             if [[ "$REPLY" != *"（暂无客服回复）"* ]]; then
-              # 发现回复，由 refer.py 内部处理推送并清除状态，此处直接退出
+              # 发现回复，由 scripts/refer.py 内部处理推送并清除状态，此处直接退出
               echo "Found reply, exiting loop."
               exit 0
             fi

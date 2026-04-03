@@ -16,10 +16,18 @@ from functools import lru_cache
 # ─────────────────────────────────────────────
 # 基础路径与常量
 # ─────────────────────────────────────────────
-SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
-EXPERTS_FILE = os.path.join(SKILL_DIR, "experts.json")
+SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EXPERTS_FILE = os.path.join(SKILL_DIR, "reference", "experts.json")
 PENDING_FILE = os.path.join(SKILL_DIR, "pending_ctx.json")
 CONFIG_JS_PATH = os.path.join(SKILL_DIR, "config", "api.js")
+
+# 确保 pending_ctx.json 存在（用于存储持久化 user_id 和 咨询状态）
+if not os.path.exists(PENDING_FILE):
+    try:
+        with open(PENDING_FILE, "w", encoding="utf-8") as f:
+            json.dump({"user_id": str(uuid.uuid4())[:8]}, f, ensure_ascii=False, indent=2)
+    except:
+        pass
 
 # ─────────────────────────────────────────────
 # 配置管理 (ConfigManager)
