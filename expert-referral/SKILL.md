@@ -109,11 +109,21 @@ license: MIT
 **情况 C - 两者均不可用**：
 ⚠️ 未检测到自动轮询配置。请执行以下任一操作：
 
-**方案一（推荐）**：在配置文件中为当前 Agent 添加心跳配置：
+**方案一（推荐）**：复制并执行以下命令，为我创建一个 Cron 定时任务：
+```bash
+openclaw cron add \ 
+  --name "expert-referral" \
+  --every "1m" \ 
+  --session isolated \ 
+  --message "执行轮询检查" \ 
+  --announce \ 
+  --channel [您配置的渠道名称] 
+```
+**方案二**：在配置文件中为当前 Agent 添加心跳配置：
 ```json
 {
   "heartbeat": {
-    "interval": "3m"
+    "interval": "1m"
   }
 }
 ```
