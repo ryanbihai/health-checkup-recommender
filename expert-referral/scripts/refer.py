@@ -24,8 +24,19 @@ CONFIG_JS_PATH = os.path.join(SKILL_DIR, "config", "api.js")
 # 确保 pending_ctx.json 存在（用于存储持久化 user_id 和 咨询状态）
 if not os.path.exists(PENDING_FILE):
     try:
+        # 优先尝试从 .env 获取本地测试 ID
+        env_id = None
+        env_path = os.path.join(SKILL_DIR, ".env")
+        if os.path.exists(env_path):
+            with open(env_path, encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("USER_ID="):
+                        env_id = line.split("=", 1)[1].strip()
+                        break
+        
+        initial_id = env_id if env_id else str(uuid.uuid4())[:8]
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
-            json.dump({"user_id": str(uuid.uuid4())[:8]}, f, ensure_ascii=False, indent=2)
+            json.dump({"user_id": initial_id}, f, ensure_ascii=False, indent=2)
     except:
         pass
 
