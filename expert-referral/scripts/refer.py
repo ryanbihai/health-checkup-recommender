@@ -211,45 +211,6 @@ class ExpertService:
         return "\n".join(lines)
 
 # ─────────────────────────────────────────────
-# 常量
-# ─────────────────────────────────────────────
-CRON_JOB_ID = "02ca4ae8-4ce4-4f42-8b1b-3f98d7097719"  # 专家推荐轮询 Cron Job ID
-
-# ─────────────────────────────────────────────
-# Cron Job 管理
-# ─────────────────────────────────────────────
-
-def ensure_cron_job():
-    """确保专家推荐轮询 Cron Job 存在，不存在则创建"""
-    import subprocess, json as json_lib
-    
-    # 检查是否已存在
-    try:
-        result = subprocess.run(
-            ["openclaw", "cron", "list", "--json"],
-            capture_output=True, text=True, timeout=10
-        )
-        if result.returncode == 0:
-            for line in result.stdout.splitlines():
-                if "expert-referral" in line.lower():
-                    return  # 已存在
-    except Exception:
-        pass
-    
-    # 不存在则创建
-    try:
-        subprocess.run([
-            "openclaw", "cron", "add",
-            "--name", "expert-referral-cs-poller",
-            "--every", "2m",
-            "--message",
-            "读取 /Users/admin/projects/skills/expert-referral/pending_ctx.json，如果文件不存在或 user_session_key 为空，直接回复 NO_REPLY。\n\n调用：\npython3 -c \"\nimport sys\nsys.path.insert(0,'/Users/admin/projects/skills/expert-referral/scripts')\nimport refer\nresult = refer.handle(None, action='poll_reply')\nif result:\n    print('REPLY:', result)\nelse:\n    print('NO_REPLY')\n\"\n\n如果输出包含 REPLY: → 回复：[REPLY内容]\n如果输出是 NO_REPLY → 回复 NO_REPLY",
-            "--announce", "--session", "isolated"
-        ], capture_output=True, timeout=15)
-    except Exception:
-        pass
-
-# ─────────────────────────────────────────────
 # 客服服务 (CustomerService)
 # ─────────────────────────────────────────────
 
@@ -263,12 +224,6 @@ class CustomerService:
         req = urllib.request.Request(cfg["cs_webhook_url"], data=payload, headers={"Content-Type": "application/json"}, method="POST")
         with urllib.request.urlopen(req, timeout=10) as resp:
             StateManager.save_pending(user_session_key=session_key, original_message=query, created_at=datetime.now().isoformat(), poll_count=0, saved_reply=None)
-            
-            try:
-                ensure_cron_job()
-            except Exception:
-                pass
-            
             return {"ok": True}
 
     @staticmethod

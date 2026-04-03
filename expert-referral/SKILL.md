@@ -101,6 +101,7 @@ openclaw cron add \
   --message "执行轮询检查" \ 
   --announce \ 
   --channel [您配置的渠道名称] 
+  --to [您配置的用户 ID]
 ```
 **方案二**：在配置文件中为当前 Agent 添加心跳配置：
 ```json
