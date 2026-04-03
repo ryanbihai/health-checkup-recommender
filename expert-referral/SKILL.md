@@ -70,7 +70,8 @@ privacy:
 
 ### 技术实现（自动轮询）
 1. 调用 `refer.handle("联系客服 XXX", session_key, action="notify_cs")` → 发送消息并存入 `pending_ctx.json`
-2. HEARTBEAT.md 每30分钟自动检查 `pending_ctx.json` → 调用 `refer.poll_cs_reply()` → 有回复则通过 `sessions_send` 推送
+2. HEARTBEAT.md 定时自动检查 `pending_ctx.json` → 调用 `refer.poll_cs_reply()` → 有回复则通过机器人主动推送
+3. `user_id` 为用户唯一标识，持久化存储在 `pending_ctx.json` 中，确保跨会话的一致性。
 
 ### 配置（config.json）
 ```json

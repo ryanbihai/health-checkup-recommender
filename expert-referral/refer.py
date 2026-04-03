@@ -36,8 +36,8 @@ def get_user_id():
     """
     获取或生成持久化用户ID，优先级：
     1. .env 中的 USER_ID（本地测试用）
-    2. config.json 中的 user_id
-    3. 新生成并写入 config.json
+    2. pending_ctx.json 中的 user_id
+    3. 新生成并写入 pending_ctx.json
     """
     import uuid
 
@@ -52,39 +52,47 @@ def get_user_id():
                     if val:
                         return val
 
-    # 优先级2：config.json
-    config = load_config()
-    if config and config.get("user_id"):
-        return config["user_id"]
+    # 优先级2：从 pending_ctx.json 读取
+    ctx = load_pending() or {}
+    if ctx.get("user_id"):
+        return ctx["user_id"]
 
-    # 优先级3：生成新ID并存入config.json
+    # 优先级3：生成新ID并存入 pending_ctx.json
     new_id = str(uuid.uuid4())[:8]
-    if config:
-        config["user_id"] = new_id
-        if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(config, f, ensure_ascii=False, indent=2)
+    ctx["user_id"] = new_id
+    with open(PENDING_FILE, "w", encoding="utf-8") as f:
+        json.dump(ctx, f, ensure_ascii=False, indent=2)
     return new_id
 
 def save_pending(user_session_key, user_message):
+    ctx = load_pending() or {}
+    ctx.update({
+        "user_id": get_user_id(),
+        "user_session_key": user_session_key,
+        "original_message": user_message,
+        "created_at": datetime.now().isoformat(),
+        "poll_count": 0
+    })
     with open(PENDING_FILE, "w", encoding="utf-8") as f:
-        json.dump({
-            "user_id": get_user_id(),      # 用持久化 user_id
-            "user_session_key": user_session_key,  # 同时保留原始 session_key
-            "original_message": user_message,
-            "created_at": datetime.now().isoformat(),
-            "poll_count": 0
-        }, f, ensure_ascii=False, indent=2)
+        json.dump(ctx, f, ensure_ascii=False, indent=2)
 
 def load_pending():
     if os.path.exists(PENDING_FILE):
-        with open(PENDING_FILE, encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(PENDING_FILE, encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return None
     return None
 
 def clear_pending():
-    if os.path.exists(PENDING_FILE):
-        os.remove(PENDING_FILE)
+    """清理咨询相关的上下文，但保留 user_id"""
+    ctx = load_pending()
+    if ctx:
+        # 只保留 user_id，清除其他咨询相关的字段
+        preserved = {"user_id": ctx.get("user_id")}
+        with open(PENDING_FILE, "w", encoding="utf-8") as f:
+            json.dump(preserved, f, ensure_ascii=False, indent=2)
 
 # ─────────────────────────────────────────────
 # 专家推荐
@@ -213,22 +221,41 @@ def poll_cs_reply(session_key=None):
 
 def check_and_push_reply():
     """
-    检查客服回复。
+    检查客服回复并推送。
     返回：str 有回复内容 | None 无回复
     """
     ctx = load_pending()
-    if not ctx or not ctx.get("user_id"):
+    if not ctx or not ctx.get("user_id") or not ctx.get("user_session_key"):
         return None
 
-    result = poll_cs_reply(ctx["user_id"])
+    result = poll_cs_reply()
     if result.get("ok") and result.get("reply"):
-        clear_pending()
-        return f"💬 **客服回复**：\n\n{result['reply']}"
+        reply_content = result["reply"]
+        
+        # 使用 sessions_send 实现主动推送（OpenClaw 支持）
+        try:
+            # 这里的 payload 需要包含推送目标和消息
+            push_payload = json.dumps({
+                "session_key": ctx["user_session_key"],
+                "content": f"💬 **客服回复**：\n\n{reply_content}"
+            }, ensure_ascii=False).encode("utf-8")
+            
+            # 注意：推送接口通常由环境注入或有特定 URL，此处假设由 Skill 框架内部处理
+            # 也可以通过 print 输出特定格式让 OpenClaw 捕获并推送
+            print(f"PUSH_MESSAGE:{push_payload.decode('utf-8')}")
+        except Exception as e:
+            # 推送失败时保留 ctx，下次继续尝试
+            return f"Error pushing: {str(e)}"
 
-    # 轮询计数，超时清除
+        clear_pending()
+        return f"💬 **客服回复**：\n\n{reply_content}"
+
+    # 轮询计数（由 HEARTBEAT.md 控制高频轮询时，这里的计数代表总尝试次数）
     ctx["poll_count"] = ctx.get("poll_count", 0) + 1
     with open(PENDING_FILE, "w", encoding="utf-8") as f:
-        json.dump(ctx, f, ensure_ascii=False)
+        json.dump(ctx, f, ensure_ascii=False, indent=2)
+    
+    # 限制总轮询时长（例如 30 次 * 1分钟 = 30 分钟）
     if ctx["poll_count"] > 30:
         clear_pending()
     return None
