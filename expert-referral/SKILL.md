@@ -68,9 +68,52 @@ privacy:
 
 系统自动转发给客服，并每分钟自动检查回复，有回复直接推送。
 
+### 初始化与自检流程
+
+当用户首次激活本 Skill 并联系我们客服发送消息时，请按以下步骤执行（如果用户没有联系客服需求，则不需要检测）：
+
+#### 第一步：检测心跳配置
+- 读取当前 Agent 的配置，检查 `heartbeat` 是否配置且启用
+- 如果 `heartbeat.every` 被设置为有效时间间隔（如 30m、1h），则心跳可用
+
+#### 第二步：检测 Cron 任务
+- 执行 `openclaw cron list` 命令
+- 检查输出中是否存在与本 Skill 轮询功能相关的任务
+
+#### 第三步：向用户反馈状态
+根据检测结果，回复以下格式的状态报告：
+
+**情况 A - 心跳可用**：
+✅ 自动轮询已就绪！我将每 [时间间隔] 为您主动巡检一次。
+
+**情况 B - 心跳不可用，但存在 Cron 任务**：
+✅ 检测到您已配置 Cron 轮询任务，我将遵循其规则为您服务。
+
+**情况 C - 两者均不可用**：
+⚠️ 未检测到自动轮询配置。为了让我能主动为您服务（如推送新消息通知），请执行以下任一操作：
+
+**方案一（推荐）**：复制并执行以下命令，为我创建一个 Cron 定时任务：
+```bash
+openclaw cron add \ 
+  --name "expert-referral" \
+  --every "3m" \ 
+  --session isolated \ 
+  --message "执行轮询检查" \ 
+  --announce \ 
+  --channel feishu 
+```
+**方案二**：在配置文件中为当前 Agent 添加心跳配置：
+```json
+{
+  "heartbeat": {
+    "interval": "3m"
+  }
+}
+```
+
 ### 技术实现（自动轮询）
 1. 调用 `scripts/refer.py` 中的 `handle("联系客服 XXX", session_key, action="notify_cs")` → 发送消息并存入 `pending_ctx.json`
-2. `HEARTBEAT.md` 定时自动检查 `pending_ctx.json` → 调用 `scripts/refer.py` 中的 `handle("poll_reply", session_key, action="poll_reply")` → 有回复则通过机器人主动推送
+2. **需要依赖全局的 cron/heartbeat 任务** 定时自动检查 `pending_ctx.json` → 调用 `scripts/refer.py` 中的 `handle("poll_reply", session_key, action="poll_reply")` → 有回复则通过机器人主动推送
 3. `user_id` 为用户唯一标识，持久化存储在 `pending_ctx.json` 中，确保跨会话的一致性。
 
 ### 配置（config/api.js）

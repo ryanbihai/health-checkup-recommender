@@ -261,7 +261,11 @@ def handle(query, session_key=None, action=None):
     if action == "notify_cs":
         res = CustomerService.notify(query, session_key)
         if res.get("ok"):
-            return "✅ 您的请求已转达给客服，系统将自动推送回复，请稍候……"
+            # 提示用户配置高频心跳以保证回复时效性
+            return (
+                "✅ 您的请求已转达给客服，系统将自动推送回复，请稍候……\n"
+                "*(提示：本技能依赖全局心跳任务来轮询客服回复。请确保您的 Agent 或工作区配置了频率较高的 cron/heartbeat 任务（如 1~5 分钟一次），否则回复可能会延迟。)*"
+            )
         return f"⚠️ 消息发送失败：{res.get('error')}"
 
     if action == "poll_reply":
