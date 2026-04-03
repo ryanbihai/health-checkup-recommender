@@ -96,17 +96,16 @@ privacy:
 ```bash
 openclaw cron add \ 
   --name "expert-referral" \
-  --every "3m" \ 
+  --every "1m" \ 
   --session isolated \ 
   --message "执行轮询检查" \ 
   --announce \ 
-  --channel feishu 
 ```
 **方案二**：在配置文件中为当前 Agent 添加心跳配置：
 ```json
 {
   "heartbeat": {
-    "interval": "3m"
+    "interval": "1m"
   }
 }
 ```

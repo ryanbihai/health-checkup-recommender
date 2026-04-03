@@ -142,7 +142,7 @@ class StateManager:
         """清理咨询会话，但保留用户身份 ID"""
         ctx = StateManager.load_pending()
         if ctx:
-            preserved = {"user_id": ctx.get("user_id")}
+            preserved = {"user_id": ctx.get("user_id"), "saved_reply": None}
             with open(PENDING_FILE, "w", encoding="utf-8") as f:
                 json.dump(preserved, f, ensure_ascii=False, indent=2)
 
@@ -223,13 +223,18 @@ class CustomerService:
         
         req = urllib.request.Request(cfg["cs_webhook_url"], data=payload, headers={"Content-Type": "application/json"}, method="POST")
         with urllib.request.urlopen(req, timeout=10) as resp:
-            StateManager.save_pending(user_session_key=session_key, original_message=query, created_at=datetime.now().isoformat(), poll_count=0)
+            StateManager.save_pending(user_session_key=session_key, original_message=query, created_at=datetime.now().isoformat(), poll_count=0, saved_reply=None)
             return {"ok": True}
 
     @staticmethod
     def poll_and_push():
         ctx = StateManager.load_pending()
         if not ctx or not ctx.get("user_session_key"): return None
+
+        # 如果有已保存的回复（上次 poll 拿到了但 delivery 还没成功），直接返回
+        saved_reply = ctx.get("saved_reply")
+        if saved_reply:
+            return f"💬 客服回复：\n\n{saved_reply}"
 
         cfg = ConfigManager.load()
         poll_url = cfg.get("cs_poll_url", "").replace("USER_SESSION_KEY", ctx["user_id"])
@@ -240,14 +245,16 @@ class CustomerService:
                 reply = (data.get("data", {}) or {}).get("reply") or data.get("reply")
                 
                 if reply:
+                    # API 是一次性 的：拿到回复后服务器就删除
+                    # 必须先存起来，后续 cron 直接返回存好的内容，不重复调 API
+                    StateManager.save_pending(saved_reply=reply)
                     push_data = json.dumps({"session_key": ctx["user_session_key"], "content": f"💬 **客服回复**：\n\n{reply}"}, ensure_ascii=False)
                     print(f"PUSH_MESSAGE:{push_data}")
-                    StateManager.clear_session()
                     return f"💬 客服回复：\n\n{reply}"
         except Exception:
             pass
 
-        # 轮询计数与清理
+        # 轮询计数与清理（没有已保存回复时才计数）
         count = ctx.get("poll_count", 0) + 1
         if count > 30: StateManager.clear_session()
         else: StateManager.save_pending(poll_count=count)
