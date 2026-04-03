@@ -229,36 +229,39 @@ class CustomerService:
     @staticmethod
     def poll_and_push():
         ctx = StateManager.load_pending()
-        if not ctx or not ctx.get("user_session_key"): return None
-
-        # 如果有已保存的回复（上次 poll 拿到了但 delivery 还没成功），直接返回
-        saved_reply = ctx.get("saved_reply")
-        if saved_reply:
-            return f"💬 客服回复：\n\n{saved_reply}"
+        if not ctx or not ctx.get("user_session_key"): 
+            return None
 
         cfg = ConfigManager.load()
+        # 这里 user_id 应该用存储的那个
         poll_url = cfg.get("cs_poll_url", "").replace("USER_SESSION_KEY", ctx["user_id"])
         
         try:
-            with urllib.request.urlopen(poll_url, timeout=10) as resp:
+            # 增加请求头，防止被 WAF 拦截
+            req = urllib.request.Request(poll_url, headers={"User-Agent": "OpenClaw-Agent"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
+                # 兼容不同接口格式
                 reply = (data.get("data", {}) or {}).get("reply") or data.get("reply")
                 
                 if reply:
-                    # API 是一次性 的：拿到回复后服务器就删除
-                    # 必须先存起来，后续 cron 直接返回存好的内容，不重复调 API
-                    StateManager.save_pending(saved_reply=reply)
-                    push_data = json.dumps({"session_key": ctx["user_session_key"], "content": f"💬 **客服回复**：\n\n{reply}"}, ensure_ascii=False)
-                    print(f"PUSH_MESSAGE:{push_data}")
-                    return f"💬 客服回复：\n\n{reply}"
-        except Exception:
-            pass
+                    # 只有拿到回复才返回
+                    # 拿到后清理 session，防止下次重复轮询同一个已完成的对话
+                    StateManager.clear_session() 
+                    return f"💬 **客服回复**：\n\n{reply}"
+                    
+        except Exception as e:
+            # 调试信息打印到 stderr，不会干扰 stdout 的推送
+            print(f"Poll Error: {e}", file=sys.stderr)
 
-        # 轮询计数与清理（没有已保存回复时才计数）
+        # 轮询计数逻辑
         count = ctx.get("poll_count", 0) + 1
-        if count > 30: StateManager.clear_session()
-        else: StateManager.save_pending(poll_count=count)
-        return None
+        if count > 60: # 稍微延长到60次（约1小时）
+            StateManager.clear_session()
+        else:
+            StateManager.save_pending(poll_count=count)
+            
+        return None # 没消息时必须返回 None
 
 # ─────────────────────────────────────────────
 # 统一入口
@@ -289,4 +292,8 @@ if __name__ == "__main__":
     cmd = args[0]
     if cmd == "search": print(ExpertService.search(" ".join(args[1:])))
     elif cmd == "notify_cs": print(handle(" ".join(args[1:2]), args[2] if len(args)>2 else "debug_user", "notify_cs"))
-    elif cmd == "poll_reply": print(handle(None, action="poll_reply") or "（暂无客服回复）")
+    elif cmd == "poll_reply":
+        result = handle(None, action="poll_reply")
+        if result:  # 只有真正有内容时才打印
+            print(result)
+        # else: 保持沉默，什么都不打。这样 Cron 就不会触发 Announce
