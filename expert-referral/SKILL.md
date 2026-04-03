@@ -77,61 +77,75 @@ license: MIT
 
 ### 业务流程
 ```
-用户 → 「联系客服 XXX」→ POST 到客服接口
-                          ↓
-                     客服收到消息，回复
-                          ↓
-                     系统自动轮询，有回复直接推送给用户
+用户 → 「联系客服 XXX」
+           ↓
+      提取真实 user_id（见下方说明）
+           ↓
+      refer.py notify_cs --user_id "真实用户ID" --message "用户的消息"
+           ↓
+      消息持久化到 pending_ctx.json
+           ↓
+      cron/heartbeat 定期调用 refer.py poll_reply
+           ↓
+      外部 API 返回客服回复 → 推送用户
 ```
+
+### ⚠️ 关键：user_id 必须从上下文提取
+
+**绝对禁止自行杜撰 user_id！** 必须从当前对话上下文中获取真实用户身份：
+
+| 渠道 | user_id 字段 | 示例 |
+|------|-------------|------|
+| **Feishu** | `event.message.sender.sender_id.open_id` | `ou_c0fffc6e92308bfe031b00ffa7083d9b` |
+| **Telegram** | `message.from.id`（数字字符串） | `123456789` |
+| **WhatsApp** | `messages[0].from` 或 `sender.id` | `15551234567` |
+| **Discord** | `message.author.id` | `987654321` |
+| **Webchat** | 使用当前会话的 session_key | `agent:main:main` |
+
+**提取优先级**：Feishu open_id > Telegram id > 其他渠道用户标识 > session_key
 
 ### 使用方式
 用户对自己的机器人说：
 > **联系客服 我想预约XXX医生，45岁**
 
-### 初始化与自检流程
+**正确调用方式（必须用 exec 工具）：**
 
-当用户首次激活本 Skill 并联系客服发送消息时，请按以下步骤执行：
-
-#### 第一步：检测心跳配置
-- 读取当前 Agent 的配置，检查 `heartbeat` 是否配置且启用
-
-#### 第二步：检测 Cron 任务
-- 执行 `openclaw cron list` 命令检查是否存在轮询任务
-
-#### 第三步：向用户反馈状态
-
-**情况 A - 心跳可用**：
-✅ 自动轮询已就绪！我将每 [时间间隔] 为您主动巡检一次。
-
-**情况 B - 心跳不可用，但存在 Cron 任务**：
-✅ 检测到您已配置 Cron 轮询任务，我将遵循其规则为您服务。
-
-**情况 C - 两者均不可用**：
-⚠️ 未检测到自动轮询配置。请执行以下任一操作：
-
-**方案一（推荐）**：复制并执行以下命令，为我创建一个 Cron 定时任务：
 ```bash
-openclaw cron add \ 
-  --name "expert-referral" \
-  --every "1m" \ 
-  --session isolated \ 
-  --message "执行轮询检查" \ 
-  --announce \ 
-  --channel [您配置的渠道名称] 
+# ⚠️ 注意：必须传入 --user_id，不能省略或杜撰
+cd <skill目录>/scripts
+python3 refer.py notify_cs \
+  --user_id "从上下文获取的真实用户身份" \
+  --message "用户的消息内容"
 ```
-**方案二**：在配置文件中为当前 Agent 添加心跳配置：
-```json
-{
-  "heartbeat": {
-    "interval": "1m"
-  }
-}
+
+### 自动轮询配置（必须）
+
+**⚠️ 本功能依赖 cron 任务持续轮询。每次联系客服后，必须执行以下步骤：**
+
+#### 第一步：检查是否已有轮询任务
+执行 `cron list`（工具调用），检查是否存在 `expert-referral-poll` 相关任务。
+
+#### 第二步：如无，则创建 cron 任务
+如果不存在，使用 `cron add`（工具调用）创建轮询任务：
+
 ```
+名称：expert-referral-poll
+执行频率：每 2 分钟一次（everyMs: 120000）
+sessionTarget：isolated（独立会话，不影响主对话）
+delivery：announce（将结果推送给用户）
+payload.kind：agentTurn
+payload.message：执行以下操作——先 cd 到 ~/.openclaw/skills/expert-referral/scripts，然后运行 python3 refer.py poll_reply 检查客服回复。如有回复，将回复内容整理后通过当前渠道推送给用户。如无回复，保持沉默，不要输出任何内容。
+```
+
+**⚠️ 注意**：
+- `sessionTarget` 必须为 `isolated`，禁止使用 `main` 或 `current`（会干扰正常对话）
+- `delivery.mode` 必须为 `announce`，这样 cron 执行完才会推送结果
 
 ### 技术实现
-1. `handle("联系客服 XXX", session_key, action="notify_cs")` → 发送消息并存入 `pending_ctx.json`
-2. 依赖全局 cron/heartbeat 任务轮询 `pending_ctx.json`
-3. 有回复则通过机器人主动推送
+1. 提取真实 user_id → 调用 `refer.py notify_cs --user_id "真实ID" --message "用户消息"`
+2. 消息持久化到 `pending_ctx.json`（存储 user_id 和咨询上下文）
+3. 依赖 cron/heartbeat 任务定期调用 `refer.py poll_reply`
+4. 有回复则通过机器人主动推送
 
 ### 配置
 `config/api.js` 中配置 `baseUrl` 和 API 路径，系统自动解析。
@@ -167,31 +181,22 @@ expert-referral/
 
 ---
 
-## scripts/refer.py 函数接口
+## scripts/refer.py 命令行接口
 
-```python
-# 专家推荐
-ExpertService.search(query) → str
-  # 按科室/疾病/症状搜索专家
-  # 返回格式化推荐结果
+```bash
+# 搜索专家
+python3 refer.py search <关键词>
 
-# 联系客服
-handle(query, session_key, action="notify_cs") → str
-  # 发送消息给客服
+# 发送客服消息（⚠️ --user_id 必填）
+python3 refer.py notify_cs --user_id "<真实用户ID>" --message "<消息内容>"
 
-handle(action="poll_reply") → str
-  # 轮询客服回复，有则返回内容
-
-CustomerService.notify(query, session_key) → dict
-  # 组装请求发给客服接口
-
-CustomerService.poll_and_push() → str
-  # 检查客服回复并处理状态流转
+# 轮询客服回复（供 cron/heartbeat 调用）
+python3 refer.py poll_reply
 ```
 
 ---
 
 ## 依赖
 
-- Python 标准库：`json`, `re`, `urllib`, `datetime`（内置）
+- Python 标准库：`json`, `re`, `urllib`, `datetime`, `argparse`（内置）
 - 可选：`openpyxl`（如需重新解析 xlsx 文件）
