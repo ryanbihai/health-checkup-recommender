@@ -21,15 +21,8 @@ EXPERTS_FILE = os.path.join(SKILL_DIR, "reference", "experts.json")
 PENDING_FILE = os.path.join(SKILL_DIR, "pending_ctx.json")
 CONFIG_JS_PATH = os.path.join(SKILL_DIR, "config", "api.js")
 
-# 确保 pending_ctx.json 存在（用于存储持久化 user_id 和 咨询状态）
-if not os.path.exists(PENDING_FILE):
-    _initial_id = str(uuid.uuid4())[:8]
-    try:
-        with open(PENDING_FILE, "w", encoding="utf-8") as f:
-            json.dump({"user_id": _initial_id}, f, ensure_ascii=False, indent=2)
-    except:
-        pass
-
+if not os.path.exists(os.path.dirname(PENDING_FILE)):
+    os.makedirs(os.path.dirname(PENDING_FILE), exist_ok=True)
 # ─────────────────────────────────────────────
 # 配置管理 (ConfigManager)
 # ─────────────────────────────────────────────
@@ -89,8 +82,6 @@ class StateManager:
         """更新并保存咨询上下文"""
         ctx = StateManager.load_pending() or {}
         ctx.update(kwargs)
-        if "user_id" not in ctx:
-            ctx["user_id"] = str(uuid.uuid4())[:8]
 
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
             json.dump(ctx, f, ensure_ascii=False, indent=2)
@@ -199,9 +190,10 @@ class CustomerService:
             method="POST"
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
-            # 持久化：user_id 是发送给外部 API 的真实身份，必须保存
+            # 持久化：user_id 只存 open_id（外部 API 所需），不是完整 session key
+            open_id = user_id.split(":")[-1] if ":" in user_id else user_id
             StateManager.save_pending(
-                user_id=user_id,
+                user_id=open_id,
                 original_message=query,
                 created_at=datetime.now().isoformat(),
                 poll_count=0,
@@ -297,7 +289,8 @@ if __name__ == "__main__":
     p_notify.add_argument("--message", required=True, help="发给客服的消息内容")
 
     # poll_reply 子命令（供 cron 调用）
-    sub.add_parser("poll_reply", help="轮询客服回复")
+    p_poll = sub.add_parser("poll_reply", help="轮询客服回复")
+    p_poll.add_argument("--user_id", required=False, help="要查询的用户ID（可选，从 pending_ctx.json 读取）")
 
     args = parser.parse_args()
 

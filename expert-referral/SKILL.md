@@ -107,10 +107,10 @@ license: MIT
 
 | 渠道 | user_id 字段 | 示例 |
 |------|-------------|------|
-| **Feishu** | `event.message.sender.sender_id.open_id` | `ou_c0fffc6e92308bfe031b00ffa7083d9b` |
-| **Telegram** | `message.from.id`（数字字符串） | `123456789` |
-| **WhatsApp** | `messages[0].from` 或 `sender.id` | `15551234567` |
-| **Discord** | `message.author.id` | `987654321` |
+| **Feishu** | `event.message.sender.sender_id.open_id` | 
+| **Telegram** | `message.from.id`（数字字符串） | 
+| **WhatsApp** | `messages[0].from` 或 `sender.id` | 
+| **Discord** | `message.author.id` |
 | **Webchat** | 使用当前会话的 session_key | `agent:main:main` |
 
 **提取优先级**：Feishu open_id > Telegram id > 其他渠道用户标识 > session_key
@@ -129,28 +129,32 @@ python3 refer.py notify_cs \
   --message "用户的消息内容"
 ```
 
-### 自动轮询配置（必须）
+### 自动推送任务执行逻辑 (Agent 必读)
+当用户发起「联系客服」请求并成功调用 `notify_cs` 后，你必须**立即执行**以下 `cron` 命令，以确保跨平台的自动回复推送：
+你在调用 cron 命令时，必须确保 `user_id` 和 `--to` 参数是**纯净的原始 ID**（例如 `ou_2c44...`）：
 
-**⚠️ 本功能依赖 cron 任务持续轮询。每次联系客服后，必须执行以下步骤：**
+1. **提取环境变量**：
+   - `{{user_id}}`: 当前用户的真实平台 ID。
+   - `{{channel}}`: 当前对话的渠道名（如 feishu, web, telegram 等）。
+   - `{{skill_path}}`: 当前 Skill 的绝对路径。
 
-#### 第一步：检查是否已有轮询任务
-执行 `cron list`（工具调用），检查是否存在 `expert-referral-poll` 相关任务。
+2. ID 清洗规则（关键）
+为了防止推送失败，你必须从 {{user_id}} 中提取出原始平台 ID（去除 OpenClaw 内部路由前缀）：
+规则：如果 {{user_id}} 包含冒号 :，请务必仅保留最后一个冒号之后的内容作为 CLEAN_ID。
+示例：若 {{user_id}} 为 agent:main:feishu:direct:abc_123，则 CLEAN_ID 为 abc_123。
+示例：若 {{user_id}} 为 admin，则 CLEAN_ID 为 admin。
 
-#### 第二步：如无，则创建 cron 任务
-如果不存在，使用 `cron add`（工具调用）创建轮询任务：
-
-```
-名称：expert-referral-poll
-执行频率：每 2 分钟一次（everyMs: 120000）
-sessionTarget：isolated（独立会话，不影响主对话）
-delivery：announce（将结果推送给用户）
-payload.kind：agentTurn
-payload.message：执行以下操作——先 cd 到 ~/.openclaw/skills/expert-referral/scripts，然后运行 python3 refer.py poll_reply 检查客服回复。如有回复，将回复内容整理后通过当前渠道推送给用户。如无回复，保持沉默，不要输出任何内容。
-```
-
-**⚠️ 注意**：
-- `sessionTarget` 必须为 `isolated`，禁止使用 `main` 或 `current`（会干扰正常对话）
-- `delivery.mode` 必须为 `announce`，这样 cron 执行完才会推送结果
+3. **执行指令（严格执行）**：
+   直接调用 Python 解释器运行脚本，确保搬运地址（--to 和 --channel）准确无误：
+   ```bash
+   openclaw cron add \
+     --name "poll-{{user_id}}" \
+     --every "1m" \
+     --message "python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{user_id}}" \
+     --announce \
+     -c "{{channel}}" \
+     -t "{{user_id}}" \
+     --session isolated
 
 ### 技术实现
 1. 提取真实 user_id → 调用 `refer.py notify_cs --user_id "真实ID" --message "用户消息"`
