@@ -90,7 +90,7 @@ if (require.main === module) {
     console.log(`\n✅ 有效: ${results.length}  ❌ 无效: ${errors.length}  🔸 冲突移除: ${removed.length}`);
     console.log(`💰 套餐总价: ¥${total}（仅供参考，以医院实际收费为准）`);
     console.log('\n去重后项目:', resolved.join(', '));
-    process.exit(errors.length > 0 ? 1 : 1);
+    process.exit(errors.length > 0 ? 1 : 0);
     return;
   }
 

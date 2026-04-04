@@ -72,22 +72,23 @@ const CONFLICT_MAP = {
  * @returns {{ resolved: string[], removed: {id,name,reason,supersededBy}[] }}
  */
 function checkConflicts(itemIds) {
-  const unique = [...new Set(itemIds)];
+  const unique = [...new Set(itemIds.map(id => id.toLowerCase()))];
   const toRemove = new Set();
   const removed = [];
 
   for (const id of unique) {
     if (toRemove.has(id)) continue;
-    const subsets = CONFLICT_MAP[id];
+    const subsets = CONFLICT_MAP[id.charAt(0).toUpperCase() + id.slice(1)];
     if (!subsets) continue;
 
     for (const subId of subsets) {
-      if (unique.includes(subId) && !toRemove.has(subId)) {
-        toRemove.add(subId);
+      const subIdLower = subId.toLowerCase();
+      if (unique.includes(subIdLower) && !toRemove.has(subIdLower)) {
+        toRemove.add(subIdLower);
         removed.push({
-          id: subId,
+          id: subIdLower,
           name: ITEMS_DB[subId]?.name || subId,
-          reason: `已被 ${id} ${ITEMS_DB[id]?.name || id} 包含`,
+          reason: `已被 ${id} ${ITEMS_DB[id.charAt(0).toUpperCase() + id.slice(1)]?.name || id} 包含`,
           supersededBy: id,
         });
       }
