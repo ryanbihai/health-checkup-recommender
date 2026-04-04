@@ -4,4 +4,25 @@
 
 node_modules/
 desktop-control/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Skill runtime
+workspace/
+workspace/avatars/
+*.png
+*.jpg
+*.jpeg
+
 .gitignore
