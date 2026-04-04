@@ -150,7 +150,7 @@ python3 refer.py notify_cs \
    openclaw cron add \
      --name "poll-reply" \
      --every "1m" \
-     --message "执行 \`python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{user_id}}\`。绝对指令：如果输出包含 '[HEARTBEAT_OK]'，你必须且只能使用工具结束当前对话回合，绝对禁止生成任何文字回复（如'No pending replies'等总结语），必须保持100%静默；只有当输出不含该标记时，才将客服的话原样发给用户。" \
+     --message "执行 \`python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{user_id}}\`。绝对指令：如果输出包含 'HEARTBEAT_OK'，你必须且只能使用工具结束当前对话回合，绝对禁止生成任何文字回复（如'No pending replies'等总结语），必须保持100%静默；只有当输出不含该标记时，才将客服的话原样发给用户。" \
      --announce \
      -c "{{channel}}" \
      -t "{{user_id}}" \

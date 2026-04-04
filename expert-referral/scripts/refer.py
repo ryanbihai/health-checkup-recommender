@@ -308,7 +308,6 @@ if __name__ == "__main__":
             print(result)
         else:
             # 使用特定的心跳标记，帮助大模型（Agent）更稳定地识别“无新消息”状态并保持静默
-            print("[HEARTBEAT_OK]")
-
+            print("HEARTBEAT_OK")
     else:
         parser.print_help()
