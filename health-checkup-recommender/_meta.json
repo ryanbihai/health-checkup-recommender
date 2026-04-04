@@ -1,10 +1,10 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "3.6.0",
-  "publishedAt": 1775268000000,
+  "version": "3.7.0",
+  "publishedAt": 1775277000000,
   "namespace": "ryanbihai",
-  "changelog": "v3.6.0: 从git拉取最新版本，保持与main分支同步",
+  "changelog": "v3.7.0: 修复执行流程，确保网络请求(sync)在用户明确同意之后进行",
   "tags": [
     "健康体检",
     "体检推荐",

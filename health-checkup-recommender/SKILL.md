@@ -185,15 +185,18 @@ node scripts/verify_items.js item029 item131 ...
    ↓
 ② exec 调用：node scripts/verify_items.js item029 [你的推荐项]
    ↓
-③ 检查退出码：0=全部有效 → 进入第④步
+③ 检查退出码：0=全部有效 → 输出推荐结果
               1=有无效项目 → 读取错误输出，修正为数据库中真实存在的相近项目，回到①重新生成
    ↓
-④ exec 调用：node scripts/sync_items.js item029 [验证通过的项目]
+④ 询问用户是否需要预约二维码
+   ↓
+⑤ 用户明确同意后：
+   → exec 调用：node scripts/sync_items.js item029 [验证通过的项目]
    → 提取接口返回的 welfareid 和 ruleid
    ↓
-⑤ exec 调用：node scripts/generate_qr.js /tmp/套餐_{timestamp}.png [welfareid] [ruleid] item029 [验证通过的项目]
+⑥ exec 调用：node scripts/generate_qr.js /tmp/套餐_{timestamp}.png [welfareid] [ruleid] item029 [验证通过的项目]
    ↓
-⑥ 读取 QR 内容，整理后输出给用户
+⑦ 读取 QR 内容，整理后输出给用户
 ```
 
 **核查脚本输出示例（通过）：**
