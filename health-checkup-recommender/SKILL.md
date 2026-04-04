@@ -3,8 +3,6 @@ name: health-checkup-recommender
 description: AI健康体检推荐服务。根据年龄/性别/症状/家族史推荐体检项目，循证依据，代码核查确保项目真实。二维码预约需用户明确同意，不自动发送。
 **触发词：体检,我要体检,身体检查,检查,体检推荐, 体检项目, 个性化体检, 定制体检,体检预约, 体检建议, 想做体检,需要体检,常规体检,入职体检,全面体检,体检套餐,全身体检**
 requires:
-config_paths:
-- USER.md
 runtime_deps:
 - npm: qrcode
 - python: qrcode

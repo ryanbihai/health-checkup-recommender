@@ -38,9 +38,7 @@
     "qr_contains_personal_data": false,
     "qr_fields": [],
     "data_flow": "qr_contains_only_readable_booking_reference_no_pii",
-    "config_paths_read": [
-      "USER.md"
-    ],
+    "config_paths_read": [],
     "runtime_deps": [
       "npm:qrcode",
       "python:qrcode"
