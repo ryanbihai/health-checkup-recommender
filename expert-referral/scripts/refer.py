@@ -7,9 +7,8 @@
 2. 联系客服(异步消息推送 + 高频心跳巡检)
 """
 
-import json, os, re, sys, textwrap, uuid
+import json, os, re, sys
 import urllib.request
-import urllib.error
 from datetime import datetime
 from functools import lru_cache
 
@@ -226,65 +225,39 @@ class CustomerService:
                     # 为防止同一条消息重复推送，检查是否与上次推送的回复相同
                     ctx = StateManager.load_pending()
                     
-                    import os
                     import shutil
-
-                    log_file = os.path.join(SKILL_DIR, "push_debug.log")
                     
-                    # if ctx.get("saved_reply") == reply:
-                    #     # 重复回复，增量计数但静默跳过
-                    #     count = ctx.get("poll_count", 0) + 1
-                    #     StateManager.save_pending(poll_count=count)
-                        
-                    #     with open(log_file, "a") as f:
-                    #         f.write(f"\n[{datetime.now().isoformat()}] --- Skipped Duplicate Reply ---\n")
-                    #         f.write(f"Reply content: {reply[:50]}...\n")
-                            
-                    #     return None
+                    if ctx.get("saved_reply") == reply:
+                        # 重复回复，增量计数但静默跳过
+                        count = ctx.get("poll_count", 0) + 1
+                        StateManager.save_pending(poll_count=count)
+                        return None
                         
                     # 新回复，保存并返回
                     StateManager.save_pending(poll_count=0, saved_reply=reply)
                     msg_content = f"💬 **客服回复**：\n\n{reply}"
                     oc_path = shutil.which("openclaw") or "openclaw"
                     
-                    # 无论参数是否齐全，先记录一下当前获取到的参数，以便排查是谁丢了
-                    with open(log_file, "a") as f:
-                        f.write(f"\n[{datetime.now().isoformat()}] --- New Reply Detected ---\n")
-                        f.write(f"Received user_id: '{user_id}'\n")
-                        f.write(f"Received channel: '{channel}'\n")
-                        f.write(f"Fallback uid from state: '{uid}'\n")
-                        f.write(f"oc_path: {oc_path}\n")
-
                     if channel and user_id:
                         import subprocess
                         
-                        with open(log_file, "a") as f:
-                            f.write(f"Executing Agent Deliver...\n")
-                        
-                            push_cmd = [
-                                oc_path, "message", "send",
-                                "--target", user_id,
-                                "--channel", channel,
-                                "--message", msg_content,
-                            ]
-                            f.write(f"Command: {' '.join(push_cmd)}\n")
+                        push_cmd = [
+                            oc_path, "message", "send",
+                            "--target", user_id,
+                            "--channel", channel,
+                            "--message", msg_content,
+                        ]
 
-                            try:
-                                result = subprocess.run(push_cmd, check=False, capture_output=True, text=True)
-                                f.write(f"Exit Code: {result.returncode}\n")
-                                f.write(f"STDOUT: {result.stdout}\n")
-                                f.write(f"STDERR: {result.stderr}\n")
-                                
-                                if result.returncode != 0:
-                                    print(f"Push Command Failed: {result.stderr}", file=sys.stderr)
-                            except Exception as e:
-                                f.write(f"Exception: {str(e)}\n")
-                                print(f"Message Send Error: {e}", file=sys.stderr)
+                        try:
+                            result = subprocess.run(push_cmd, check=False, capture_output=True, text=True)
+                            
+                            if result.returncode != 0:
+                                print(f"Push Command Failed: {result.stderr}", file=sys.stderr)
+                        except Exception as e:
+                            print(f"Message Send Error: {e}", file=sys.stderr)
                             
                         return None # 消息已发送，不再向上抛出，避免任何标准输出
                     else:
-                        with open(log_file, "a") as f:
-                            f.write(f"Skipped pushing message because parameters are missing.\n")
                         return msg_content
 
         except Exception as e:
