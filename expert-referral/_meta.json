@@ -1,0 +1,34 @@
+{
+  "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
+  "slug": "china-top-doctor-referral",
+  "version": "1.2.0",
+  "publishedAt": 1775268000000,
+  "namespace": "ryanbihai",
+  "changelog": "v1.0.0: 初始版本 - 三甲医院主任/副主任级医生推荐，支持专家搜索和客服联系",
+  "tags": [
+    "专家推荐",
+    "医生推荐",
+    "挂号",
+    "预约专家",
+    "三甲医院",
+    "主任医生",
+    "副主任医生",
+    "和睦家",
+    "怡德医院",
+    "医疗",
+    "doctor referral",
+    "medical appointment",
+    "top doctor",
+    "china hospitals"
+  ],
+  "security": {
+    "user_consent_required": true,
+    "third_party_booking": "www.ihaola.com.cn",
+    "config_paths_read": [
+      "config/api.js"
+    ],
+    "runtime_deps": [
+      "python:openpyxl"
+    ]
+  }
+}
