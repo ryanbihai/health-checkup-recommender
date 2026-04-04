@@ -224,16 +224,18 @@ class CustomerService:
                 reply = (data.get("data", {}) or {}).get("reply") or data.get("reply")
 
                 if reply:
-                    # 拿到回复后清理会话，防止重复推送
-                    StateManager.clear_session()
+                    # 获取到回复后，不再清理会话，而是将最新回复保存，继续轮询后续新消息
+                    # 为防止同一条消息重复推送，需要确保 API 端或者我们自己能识别“新消息”
+                    # 这里我们简单更新状态，保持 user_id 存在以便继续轮询
+                    StateManager.save_pending(poll_count=0) # 重置计数器，因为有互动
                     return f"💬 **客服回复**：\n\n{reply}"
 
         except Exception as e:
             print(f"Poll Error: {e}", file=sys.stderr)
 
-        # 轮询计数：超过 60 次（约 1 小时）自动清理
+        # 轮询计数：超过 20 次 无互动，才自动清理
         count = ctx.get("poll_count", 0) + 1
-        if count > 60:
+        if count > 20:
             StateManager.clear_session()
         else:
             StateManager.save_pending(poll_count=count)
@@ -306,7 +308,9 @@ if __name__ == "__main__":
         result = handle(action="poll_reply")
         if result:
             print(result)
-        # 无回复时保持沉默，不输出——这样 cron announce 不会误触发
+        else:
+            # 使用特定的心跳标记，帮助大模型（Agent）更稳定地识别“无新消息”状态并保持静默
+            print("[HEARTBEAT_OK]")
 
     else:
         parser.print_help()

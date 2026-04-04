@@ -148,14 +148,14 @@ python3 refer.py notify_cs \
    直接调用 Python 解释器运行脚本，确保搬运地址（--to 和 --channel）准确无误：
    ```bash
    openclaw cron add \
-     --name "poll-{{user_id}}" \
+     --name "poll-reply" \
      --every "1m" \
-     --message "python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{user_id}}" \
+     --message "执行 \`python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{user_id}}\`。绝对指令：如果输出包含 '[HEARTBEAT_OK]'，你必须且只能使用工具结束当前对话回合，绝对禁止生成任何文字回复（如'No pending replies'等总结语），必须保持100%静默；只有当输出不含该标记时，才将客服的话原样发给用户。" \
      --announce \
      -c "{{channel}}" \
      -t "{{user_id}}" \
      --session isolated
-
+    ```
 ### 技术实现
 1. 提取真实 user_id → 调用 `refer.py notify_cs --user_id "真实ID" --message "用户消息"`
 2. 消息持久化到 `pending_ctx.json`（存储 user_id 和咨询上下文）
