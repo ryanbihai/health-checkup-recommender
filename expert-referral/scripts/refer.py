@@ -202,7 +202,7 @@ class CustomerService:
             return {"ok": True}
 
     @staticmethod
-    def poll_and_push():
+    def poll_and_push(user_id=None):
         """
         轮询客服回复。
 
@@ -211,11 +211,9 @@ class CustomerService:
         没回复返回 None。
         """
         ctx = StateManager.load_pending()
-        if not ctx or not ctx.get("user_id"):
-            return None
-
+        uid = user_id or ctx.get("user_id")
         cfg = ConfigManager.load()
-        poll_url = cfg.get("cs_poll_url", "").replace("USER_SESSION_KEY", ctx["user_id"])
+        poll_url = cfg.get("cs_poll_url", "").replace("USER_SESSION_KEY", uid)
 
         try:
             req = urllib.request.Request(poll_url, headers={"User-Agent": "OpenClaw-Agent"})
@@ -267,7 +265,7 @@ def handle(query=None, user_id=None, action=None):
         return f"⚠️ 消息发送失败：{res.get('error')}"
 
     if action == "poll_reply":
-        return CustomerService.poll_and_push()
+        return CustomerService.poll_and_push(user_id=user_id)
 
     return ExpertService.search(query)
 
