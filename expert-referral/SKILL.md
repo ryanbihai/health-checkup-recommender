@@ -127,25 +127,36 @@ license: MIT
 cd <skill目录>/scripts
 python3 refer.py notify_cs \
   --user_id "从上下文获取的真实用户身份" \
-  --message "用户的消息内容"
+  --message "用户的消息内容" \
+  --channel "{{channel}}" \
 ```
 
 ### 自动推送任务执行逻辑 (Agent 必读)
 当用户发起「联系客服」请求并成功调用 `notify_cs` 后，你必须创建一个后台轮询任务来等待客服回复。
 
 **默认方案：Cron 定时任务**
-这是最稳妥的方案。你在调用 cron 命令时，必须确保 `user_id` 和 `--to` 参数是**纯净的原始 ID**（如果包含冒号 `:`，仅保留最后一个冒号之后的内容）：
 
-```bash
-openclaw cron add \
-  --name "poll-reply" \
-  --every "1m" \
-  --message "执行 \`python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{user_id}}\`。绝对指令：如果输出为 'HEARTBEAT_OK'，你必须且只能回复 \`HEARTBEAT_OK\`（触发系统拦截保持静默，绝不能生成其他字符）；如果是真实的客服回复，请原样推送给用户。" \
-  --announce \
-  -c "{{channel}}" \
-  -t "{{user_id}}" \
-  --session isolated
-```
+1. **提取环境变量**：
+   - `{{user_id}}`: 当前用户的真实平台 ID。
+   - `{{channel}}`: 当前对话的渠道名（如 feishu, web, telegram 等）。
+   - `{{skill_path}}`: 当前 Skill 的绝对路径。
+
+2. ID 清洗规则（关键）
+为了防止推送失败，你必须从 {{user_id}} 中提取出原始平台 ID（去除 OpenClaw 内部路由前缀）：
+规则：如果 {{user_id}} 包含冒号 :，请务必仅保留最后一个冒号之后的内容作为 CLEAN_ID。
+示例：若 {{user_id}} 为 agent:main:feishu:direct:abc_123，则 CLEAN_ID 为 abc_123。
+示例：若 {{user_id}} 为 admin，则 CLEAN_ID 为 admin。
+
+3. **执行指令（严格执行）**：
+  直接调用 Python 解释器运行脚本，确保搬运地址（--to 和 --channel）准确无误：
+  ```bash
+  openclaw cron add \
+    --name "poll-reply" \
+    --every "10s" \
+    --message "执行 \`python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{CLEAN_ID}} --channel {{channel}} \`" \
+    --no-deliver \
+    --session isolated
+  ```
 
 **高级备选方案：全局 Heartbeat（需用户手动配置）**
 如果你检测到（或用户明确告知）当前系统的主工作区（Workspace）下的 `HEARTBEAT.md` 中已经手动整合了本 Skill 的轮询任务，且全局心跳服务已开启。

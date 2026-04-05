@@ -2,14 +2,13 @@
 """
 专家推荐 Skill - 核心引擎
 
-功能：
-1. 专家推荐（基于 experts.json 搜索引擎）
-2. 联系客服（异步消息推送 + 高频心跳巡检）
+功能:
+1. 专家推荐(基于 experts.json 搜索引擎)
+2. 联系客服(异步消息推送 + 高频心跳巡检)
 """
 
-import json, os, re, sys, textwrap, uuid
+import json, os, re, sys
 import urllib.request
-import urllib.error
 from datetime import datetime
 from functools import lru_cache
 
@@ -33,7 +32,7 @@ class ConfigManager:
     @staticmethod
     @lru_cache(maxsize=1)
     def load():
-        """从 config/api.js 动态提取接口地址，实现 dev/prod 环境自动切换"""
+        """从 config/api.js 动态提取接口地址,实现 dev/prod 环境自动切换"""
         if not os.path.exists(CONFIG_JS_PATH):
             return {}
 
@@ -64,7 +63,7 @@ class ConfigManager:
 # ─────────────────────────────────────────────
 
 class StateManager:
-    """负责持久化状态（user_id 和咨询上下文）的管理"""
+    """负责持久化状态(user_id 和咨询上下文)的管理"""
 
     @staticmethod
     def load_pending():
@@ -88,7 +87,7 @@ class StateManager:
 
     @staticmethod
     def clear_session():
-        """清理咨询会话，但保留用户身份 ID"""
+        """清理咨询会话,但保留用户身份 ID"""
         ctx = StateManager.load_pending()
         if ctx:
             preserved = {"user_id": ctx.get("user_id"), "saved_reply": None}
@@ -142,24 +141,24 @@ class ExpertService:
         if primary:
             lines.append("✅ **可直接预约的专家**\n")
             for e in primary:
-                lines.append(f"【{e['city']}·{e['dept']}】{e['name']} | {e.get('title','')} | 出诊：{e['practice_hospital']} | {e['schedule']} | 诊费：{e.get('fee','详询')}")
+                lines.append(f"【{e['city']}·{e['dept']}】{e['name']} | {e.get('title','')} | 出诊:{e['practice_hospital']} | {e['schedule']} | 诊费:{e.get('fee','详询')}")
                 if e.get("skill"):
-                    lines.append(f"擅长：{e['skill'][:80]}...")
+                    lines.append(f"擅长:{e['skill'][:80]}...")
                 lines.append("")
 
         if secondary:
-            lines.append("\n📋 **专家背景介绍（仅供了解）**\n")
+            lines.append("\n📋 **专家背景介绍(仅供了解)**\n")
             for e in secondary:
-                lines.append(f"【{e['city']}·{e['dept']}】{e['name']} | {e.get('title','')} | 原单位：{e.get('main_hospital','')} | 出诊：{e['practice_hospital']}")
+                lines.append(f"【{e['city']}·{e['dept']}】{e['name']} | {e.get('title','')} | 原单位:{e.get('main_hospital','')} | 出诊:{e['practice_hospital']}")
                 if e.get("skill"):
-                    lines.append(f"擅长：{e['skill'][:60]}...")
+                    lines.append(f"擅长:{e['skill'][:60]}...")
                 lines.append("")
 
         lines.extend([
             "\n---\n📞 **联系我们预约专家**",
-            "1️⃣ 电话热线：**400-109-2838**",
-            "2️⃣ 微信公众号：**好啦**",
-            "3️⃣ 直接帮您联系客服：回复「联系客服」+ 您的需求"
+            "1️⃣ 电话热线:**400-109-2838**",
+            "2️⃣ 微信公众号:**好啦**",
+            "3️⃣ 直接帮您联系客服:回复「联系客服」+ 您的需求"
         ])
         return "\n".join(lines)
 
@@ -175,9 +174,9 @@ class CustomerService:
 
         Args:
             user_id: 真实用户身份标识。
-                     - Feishu 渠道：使用 open_id（如 ou_xxx）
-                     - 其他渠道：使用该渠道的用户唯一标识
-                     - ⚠️ 禁止自行杜撰！必须从当前对话上下文中提取真实用户身份。
+                     - Feishu 渠道:使用 open_id(如 ou_xxx)
+                     - 其他渠道:使用该渠道的用户唯一标识
+                     - ⚠️ 禁止自行杜撰!必须从当前对话上下文中提取真实用户身份。
             query: 用户发送给客服的消息内容。
         """
         cfg = ConfigManager.load()
@@ -190,7 +189,7 @@ class CustomerService:
             method="POST"
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
-            # 持久化：user_id 只存 open_id（外部 API 所需），不是完整 session key
+            # 持久化:user_id 只存 open_id(外部 API 所需),不是完整 session key
             open_id = user_id.split(":")[-1] if ":" in user_id else user_id
             StateManager.save_pending(
                 user_id=open_id,
@@ -202,12 +201,12 @@ class CustomerService:
             return {"ok": True}
 
     @staticmethod
-    def poll_and_push(user_id=None):
+    def poll_and_push(user_id=None, channel=None):
         """
         轮询客服回复。
 
-        读取 pending_ctx.json 中存储的 user_id，发给外部 API 查询回复。
-        有回复则返回内容（由调用方负责推送给用户）。
+        读取 pending_ctx.json 中存储的 user_id,发给外部 API 查询回复。
+        有回复则返回内容(由调用方负责推送给用户)。
         没回复返回 None。
         """
         ctx = StateManager.load_pending()
@@ -223,15 +222,50 @@ class CustomerService:
 
                 if reply:
                     # 获取到回复后，不再清理会话，而是将最新回复保存，继续轮询后续新消息
-                    # 为防止同一条消息重复推送，需要确保 API 端或者我们自己能识别“新消息”
-                    # 这里我们简单更新状态，保持 user_id 存在以便继续轮询
-                    StateManager.save_pending(poll_count=0) # 重置计数器，因为有互动
-                    return f"💬 **客服回复**：\n\n{reply}"
+                    # 为防止同一条消息重复推送，检查是否与上次推送的回复相同
+                    ctx = StateManager.load_pending()
+                    
+                    import shutil
+                    
+                    if ctx.get("saved_reply") == reply:
+                        # 重复回复，增量计数但静默跳过
+                        count = ctx.get("poll_count", 0) + 1
+                        StateManager.save_pending(poll_count=count)
+                        return None
+                        
+                    # 新回复，保存并返回
+                    StateManager.save_pending(poll_count=0, saved_reply=reply)
+                    msg_content = f"💬 **客服回复**：\n\n{reply}"
+                    oc_path = shutil.which("openclaw") or "openclaw"
+                    
+                    if channel and user_id:
+                        import subprocess
+                        
+                        push_cmd = [
+                            oc_path, "message", "send",
+                            "--target", user_id,
+                            "--channel", channel,
+                            "--message", msg_content,
+                        ]
+
+                        try:
+                            result = subprocess.run(push_cmd, check=False, capture_output=True, text=True)
+                            
+                            if result.returncode != 0:
+                                print(f"Push Command Failed: {result.stderr}", file=sys.stderr)
+                        except Exception as e:
+                            print(f"Message Send Error: {e}", file=sys.stderr)
+                            
+                        return None # 消息已发送，不再向上抛出，避免任何标准输出
+                    else:
+                        return msg_content
 
         except Exception as e:
             print(f"Poll Error: {e}", file=sys.stderr)
 
-        # 轮询计数：超过 20 次 无互动，才自动清理
+        # 轮询计数:超过 20 次 无互动,才自动清理
+        if ctx is None:
+            ctx = {"poll_count": 0}
         count = ctx.get("poll_count", 0) + 1
         if count > 20:
             StateManager.clear_session()
@@ -244,28 +278,28 @@ class CustomerService:
 # 统一入口
 # ─────────────────────────────────────────────
 
-def handle(query=None, user_id=None, action=None):
+def handle(query=None, user_id=None, action=None, channel=None):
     """
     skill 主入口。
 
-    参数：
-        query: 用户消息（发给客服的内容）
-        user_id: 真实用户身份（必须从当前对话上下文中提取，禁止杜撰）
-        action: "notify_cs" | "poll_reply" | None（默认搜索专家）
+    参数:
+        query: 用户消息(发给客服的内容)
+        user_id: 真实用户身份(必须从当前对话上下文中提取,禁止杜撰)
+        action: "notify_cs" | "poll_reply" | None(默认搜索专家)
     """
     if action == "notify_cs":
         if not user_id:
-            return "⚠️ 发送失败：未提供用户身份标识。请从当前对话上下文中提取真实的 user_id（Feishu 为 open_id，其他渠道为对应用户标识），然后重试。"
+            return "⚠️ 发送失败:未提供用户身份标识。请从当前对话上下文中提取真实的 user_id(Feishu 为 open_id,其他渠道为对应用户标识),然后重试。"
         res = CustomerService.notify(user_id, query)
         if res.get("ok"):
             return (
-                "✅ 您的请求已转达给客服，系统将自动推送回复，请稍候……\n"
-                "*(提示：本技能依赖全局心跳/cron 任务轮询客服回复。如未配置，回复可能会有延迟。)*"
+                "✅ 您的请求已转达给客服,系统将自动推送回复,请稍候......\n"
+                "*(提示:本技能依赖全局心跳/cron 任务轮询客服回复。如未配置,回复可能会有延迟。)*"
             )
-        return f"⚠️ 消息发送失败：{res.get('error')}"
+        return f"⚠️ 消息发送失败:{res.get('error')}"
 
     if action == "poll_reply":
-        return CustomerService.poll_and_push(user_id=user_id)
+        return CustomerService.poll_and_push(user_id=user_id, channel=channel)
 
     return ExpertService.search(query)
 
@@ -281,16 +315,18 @@ if __name__ == "__main__":
 
     # search 子命令
     p_search = sub.add_parser("search", help="搜索专家")
-    p_search.add_argument("query", nargs="*", help="搜索关键词（科室/疾病/症状）")
+    p_search.add_argument("query", nargs="*", help="搜索关键词(科室/疾病/症状)")
 
     # notify_cs 子命令
     p_notify = sub.add_parser("notify_cs", help="发送客服消息")
-    p_notify.add_argument("--user_id", required=True, help="真实用户身份标识（必须）")
+    p_notify.add_argument("--user_id", required=True, help="真实用户身份标识(必须)")
     p_notify.add_argument("--message", required=True, help="发给客服的消息内容")
+    p_notify.add_argument("--channel", required=True,  help="渠道")
 
-    # poll_reply 子命令（供 cron 调用）
+    # poll_reply 子命令(供 cron 调用)
     p_poll = sub.add_parser("poll_reply", help="轮询客服回复")
-    p_poll.add_argument("--user_id", required=False, help="要查询的用户ID（可选，从 pending_ctx.json 读取）")
+    p_poll.add_argument("--user_id", required=False, help="要查询的用户ID(可选,从 pending_ctx.json 读取)")
+    p_poll.add_argument("--channel", required=False, default="feishu", help="渠道(默认feishu)")
 
     args = parser.parse_args()
 
@@ -299,15 +335,13 @@ if __name__ == "__main__":
         print(ExpertService.search(q))
 
     elif args.cmd == "notify_cs":
-        result = handle(query=args.message, user_id=args.user_id, action="notify_cs")
+        result = handle(query=args.message, user_id=args.user_id, action="notify_cs", channel=args.channel)
         print(result)
 
     elif args.cmd == "poll_reply":
-        result = handle(action="poll_reply")
+        result = handle(action="poll_reply", channel=args.channel, user_id=args.user_id)
         if result:
             print(result)
-        else:
-            # 使用特定的心跳标记，帮助大模型（Agent）更稳定地识别“无新消息”状态并保持静默
-            print("HEARTBEAT_OK")
+        # 完全静默，不要输出任何占位符
     else:
         parser.print_help()
