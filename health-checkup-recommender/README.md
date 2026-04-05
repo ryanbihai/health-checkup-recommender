@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-OpenClaw-green.svg)](https://openclaw.ai)
-[![ClawHub](https://img.shields.io/badge/ClawHub-v1.9.0-orange.svg)](https://clawhub.ai/skill/ryanbihai/health-checkup-recommender)
+[![ClawHub](https://img.shields.io/badge/ClawHub-v4.0.0-orange.svg)](https://clawhub.ai/skill/ryanbihai/health-checkup-recommender)
 [![Downloads](https://img.shields.io/badge/Downloads-60+-blue.svg)](https://clawhub.ai/skill/ryanbihai/health-checkup-recommender)
 
 **Keywords:** 健康体检 | 体检推荐 | 体检套餐 | AI medical checkup | health examination | personalized体检 | evidence-based medicine | 循证医学 | 体检预约
@@ -18,7 +18,9 @@
 | 🤖 智能推荐 | 根据年龄/性别/症状/家族史推荐体检项目 |
 | 📋 循证依据 | 每项推荐附带医学证据 |
 | ✅ 项目核查 | 代码验证确保项目真实存在 |
-| 📱 预约二维码 | 自动生成体检预约二维码 |
+| 💰 价格计算 | 代码自动计算总价，避免LLM数学错误 |
+| 📱 预约二维码 | 自动生成体检预约二维码（支持接口降级） |
+| 🛡️ 容错降级 | 接口404时自动降级为默认二维码，确保100%成功率 |
 | 🏥 机构对接 | 支持多家体检机构预约 |
 
 ---

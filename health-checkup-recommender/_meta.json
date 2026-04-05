@@ -1,10 +1,10 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "3.7.1",
+  "version": "4.0.0",
   "publishedAt": 1775280000000,
   "namespace": "ryanbihai",
-  "changelog": "v3.7.1: 移除Python缓存文件(__pycache__/*.pyc)，消除unicode-control-chars警告",
+  "changelog": "v4.0.0: 精简重构：移除SKILL.md重复内容，创建独立PROMPTS.md，话术模板与核心逻辑分离",
   "tags": [
     "健康体检",
     "体检推荐",
