@@ -1,15 +1,3 @@
-const fs = require('fs')
-const path = require('path')
-
-const getEnv = () => {
-  const debugFilePath = path.join(__dirname, '..', 'DEBUG_MODE')
-  if (fs.existsSync(debugFilePath)) {
-    return 'dev'
-  }
-
-  return 'prod'
-}
-
 const envMap = {
   dev: {
     domain: 'https://t.ihaola.com.cn',
@@ -21,7 +9,9 @@ const envMap = {
   }
 }
 
-const activeEnv = envMap[getEnv()] || envMap.prod
+// 移除了 DEBUG_MODE 文件读取逻辑，以满足安全合规要求。
+// 现在完全通过标准环境变量控制环境
+const activeEnv = process.env.NODE_ENV === 'development' ? envMap.dev : envMap.prod
 
 const config = {
   domain: activeEnv.domain,

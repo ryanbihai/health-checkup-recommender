@@ -1,10 +1,20 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "4.1.5",
+  "version": "4.1.6",
   "publishedAt": 1775280000000,
   "namespace": "ryanbihai",
-  "changelog": "v4.1.5: 升级数据来源循证引用：risk_logic_table.json 增加 BMJ/JAMA/国家癌症中心引用元数据；evidence_mappings_2025.json 明确标注国家卫建委出处；PROMPTS.md 增强循证依据展示",
+  "homepage": "https://www.ihaola.com.cn",
+  "dependencies": {
+    "npm": ["qrcode"],
+    "python": ["qrcode"]
+  },
+  "install": "npm install",
+  "permissions": {
+    "network": ["https://*.ihaola.com.cn", "http://*.ihaola.com.cn"],
+    "filesystem": ["write"]
+  },
+  "changelog": "v4.1.6: 移除 DEBUG_MODE 文件读取逻辑；在元数据中显式声明依赖项、安装方式、网络权限和主页；添加 SECURITY_AUDIT.md 明确声明网络调用的数据字段。",
   "tags": [
     "健康体检",
     "体检推荐",

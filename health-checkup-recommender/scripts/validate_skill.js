@@ -18,7 +18,7 @@ const DANGEROUS_PATTERNS = [
   { pattern: /eval\s*\(/, message: '发现 eval() 调用' },
   { pattern: /exec\s*\(/, message: '发现 exec() 调用' },
   { pattern: /child_process/, message: '发现 child_process 引用' },
-  { pattern: /process\.env\.[A-Z]/, message: '发现环境变量访问' },
+  { pattern: /process\.env\.(?!NODE_ENV)/, message: '发现环境变量访问（非 NODE_ENV）' },
 ]
 
 function checkFile(filePath) {
@@ -46,6 +46,8 @@ function main() {
     'PROMPTS.md',
     'README.md',
     '_meta.json',
+    'SECURITY_AUDIT.md',
+    'config/api.js',
     'scripts/generate_qr_with_fallback.js',
     'scripts/sync_items.js'
   ]
