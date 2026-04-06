@@ -1,8 +1,7 @@
 ---
-
 name: china-top-doctor-referral
-version: 1.2.4
-description: 面向高端医疗险客户，推荐（北京）和预约协和医院、北大系、阜外医院、安贞医院、中国医学科学院肿瘤医院；（上海）复旦华山/中山/儿科/肿瘤/眼耳鼻喉医院等顶级三甲医院主任/副主任级医生。可按科室/疾病/症状匹配顶级专家，并预约其在和睦家、怡德等高端私立医院的门诊。专属客服跟进协助预约。
+version: 1.2.5
+description: 面向高端医疗险客户，推荐和预约（北京）协和医院、北大系、阜外医院、安贞医院、中国医学科学院肿瘤医院；（上海）复旦华山/中山/儿科/肿瘤/眼耳鼻喉医院等顶级三甲医院主任/副主任专家。可按科室/疾病/症状匹配顶级专家，并预约其在和睦家、怡德等高端私立医院的门诊。专属客服跟进协助预约。
 homepage: https://www.ihaola.com.cn
 metadata:
   category: utility
@@ -33,7 +32,6 @@ metadata:
     name: haola
     contact: https://www.ihaola.com.cn
   license: MIT
-
 ---
 
 # Top Doctor Referral
@@ -61,7 +59,7 @@ metadata:
 
 **专家推荐, 预约专家, 挂号, 看哪个医生, 找哪个专家, 推荐医生, 想看, 要挂号, 主任, 副主任, 三甲医生, 联系客服, 客服**
 
-***
+---
 
 ## 功能一：专家推荐
 
@@ -92,7 +90,7 @@ metadata:
 擅长：...
 ```
 
-***
+---
 
 ## 功能二：联系客服
 
@@ -112,19 +110,19 @@ metadata:
       外部 API 返回客服回复 → 推送用户
 ```
 
-### ⚠️ 关键：user\_id 必须从上下文提取
+### ⚠️ 关键：user_id 必须从上下文提取
 
-**绝对禁止自行杜撰 user\_id！** 必须从当前对话上下文中获取真实用户身份：
+**绝对禁止自行杜撰 user_id！** 必须从当前对话上下文中获取真实用户身份：
 
-| 渠道           | user\_id 字段                              | 示例                |
+| 渠道           | user_id 字段                              | 示例                |
 | ------------ | ---------------------------------------- | ----------------- |
 | **Feishu**   | `event.message.sender.sender_id.open_id` | <br />            |
 | **Telegram** | `message.from.id`（数字字符串）                 | <br />            |
 | **WhatsApp** | `messages[0].from` 或 `sender.id`         | <br />            |
 | **Discord**  | `message.author.id`                      | <br />            |
-| **Webchat**  | 使用当前会话的 session\_key                     | `agent:main:main` |
+| **Webchat**  | 使用当前会话的 session_key                     | `agent:main:main` |
 
-**提取优先级**：Feishu open\_id > Telegram id > 其他渠道用户标识 > session\_key
+**提取优先级**：Feishu open_id > Telegram id > 其他渠道用户标识 > session_key
 
 ### 使用方式
 
@@ -154,11 +152,11 @@ python3 refer.py notify_cs \
    - `{{user_id}}`: 当前用户的真实平台 ID。
    - `{{channel}}`: 当前对话的渠道名（如 feishu, web, telegram 等）。
    - `{{skill_path}}`: 当前 Skill 的绝对路径。
-2. ID 清洗规则（关键）
-   为了防止推送失败，你必须从 {{user\_id}} 中提取出原始平台 ID（去除 OpenClaw 内部路由前缀）：
-   规则：如果 {{user\_id}} 包含冒号 :，请务必仅保留最后一个冒号之后的内容作为 CLEAN\_ID。
-   示例：若 {{user\_id}} 为 agent:main:feishu:direct:abc\_123，则 CLEAN\_ID 为 abc\_123。
-   示例：若 {{user\_id}} 为 admin，则 CLEAN\_ID 为 admin。
+2. **ID 清洗规则（关键）**
+   为了防止推送失败，你必须从 {{user_id}} 中提取出原始平台 ID（去除 OpenClaw 内部路由前缀）：
+   规则：如果 {{user_id}} 包含冒号 :，请务必仅保留最后一个冒号之后的内容作为 CLEAN_ID。
+   示例：若 {{user_id}} 为 agent:main:feishu:direct:abc_123，则 CLEAN_ID 为 abc_123。
+   示例：若 {{user_id}} 为 admin，则 CLEAN_ID 为 admin。
 3. **执行指令（严格执行）**：
    直接调用 Python 解释器运行脚本，确保搬运地址（--to 和 --channel）准确无误：
 
@@ -166,7 +164,7 @@ python3 refer.py notify_cs \
 openclaw cron add \
   --name "poll-reply" \
   --every "10s" \
-  --message "执行 \`python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{CLEAN_ID}} --channel {{channel}} \`" \
+  --message "执行 `python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{CLEAN_ID}} --channel {{channel}} `" \
   --no-deliver \
   --session isolated
 ```
@@ -183,7 +181,7 @@ openclaw cron add \
 
 ### 技术实现
 
-1. 提取真实 user\_id → 调用 `refer.py notify_cs --user_id "真实ID" --message "用户消息" --channel "渠道" --consent=true`
+1. 提取真实 user_id → 调用 `refer.py notify_cs --user_id "真实ID" --message "用户消息" --channel "渠道" --consent=true`
 2. 消息持久化到 `pending_ctx.json`（存储单用户的轮询上下文）
 3. 依赖 Heartbeat 或 Cron 任务定期调用 `refer.py poll_reply`
 4. 脚本输出 `HEARTBEAT_OK` 时触发静默，输出真实内容时通过机器人主动推送。
@@ -203,9 +201,8 @@ openclaw cron add \
 
 - **电话**：400-109-2838
 - **微信公众号**：好啦
-  !\[好啦公众号]\(images/haola\_qr.jpg null)
 
-***
+---
 
 ## 文件结构
 
@@ -223,7 +220,7 @@ expert-referral/
     └── haola_qr.jpg      # 公众号二维码
 ```
 
-***
+---
 
 ## scripts/refer.py 命令行接口
 
@@ -238,7 +235,7 @@ python3 refer.py notify_cs --user_id "<真实用户ID>" --message "<消息内容
 python3 refer.py poll_reply
 ```
 
-***
+---
 
 ## 安装前须知
 
@@ -265,14 +262,13 @@ python3 refer.py poll_reply
 
 ### 信任验证
 
-- **官网**：<https://www.ihaola.com.cn>
-- **隐私政策**：<https://www.ihaola.com.cn/privacy>
+- **官网**：https://www.ihaola.com.cn
+- **隐私政策**：https://www.ihaola.com.cn/privacy
 - **客服电话**：400-109-2838
 
-***
+---
 
 ## 依赖
 
 - Python 标准库：`json`, `re`, `urllib`, `datetime`, `argparse`（内置）
 - 可选：`openpyxl`（如需重新解析 xlsx 文件）
-
