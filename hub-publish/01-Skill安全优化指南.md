@@ -63,8 +63,8 @@ node -e "const fs=require('fs');const c=fs.readFileSync('SKILL.md','utf8');fs.wr
 ### 1.4 经验教训
 
 - **SKILL.md** 和 **PROMPTS.md** 是核心提示词文件，必须在每次发布前检测并清理
-- 仅清理 `SKILL.md` 不够——ClawHub 扫描器会扫描仓库中所有 Markdown 文件
-- 建议在本地开发流程中加入自动化检测环节（参见第八章）
+- 仅清理 `SKILL.md` 不够——ClawHub 扫描器会扫描仓库中**所有 Markdown 文件**（包括 `README.md`、`CHANGELOG.md` 等），并在报告中统一归类为"SKILL.md 发现风险"。**实际操作中，在 `README.md` 中发现了一个 `\u200D`（零宽连字符），也会导致 `SKILL.md` 被标记**
+- 建议在本地开发流程中加入自动化检测环节（参见第七章）
 
 ---
 
@@ -176,7 +176,14 @@ node generate_qr_with_fallback.js --consent=true ./output item029 item131
 
 - "需要用户同意"如果只写在文档里，扫描器认为这是**流程建议**，不是安全约束
 - 代码层的 `--consent=true` 向安全审查机制证明了"同意"是**程序强制执行**的
-- 即使只有一步网络调用（如只传商品 ID），也必须加此参数
+- **所有涉及网络调用的脚本**都需要加 `--consent=true`，不仅仅是二维码生成脚本。实际操作中，`sync_items.js`（项目同步接口）也需要同样的硬阻断机制
+- 在发起网络请求的代码处，应补充明确的隐私声明注释，让扫描器能看到"设计意图"：
+  ```javascript
+  // 安全与隐私声明：
+  // 本请求仅传输脱敏的项目ID（如 ['item029', 'item131']），不包含任何个人身份信息（PII）。
+  // 数据仅用于在服务器暂存体检项目，生成脱敏的福利ID（welfareid/ruleid）。
+  // 用户的真实个人信息将在扫码后由用户自行在第三方平台授权提供。
+  ```
 
 ---
 
@@ -261,8 +268,8 @@ const SKILL_ROOT = path.resolve(__dirname, '..')
 const FILES_TO_CHECK = [
   'SKILL.md',
   'PROMPTS.md',
-  '_meta.json',
-  'README.md'
+  'README.md',
+  '_meta.json'
 ]
 
 function checkFile(filePath) {
