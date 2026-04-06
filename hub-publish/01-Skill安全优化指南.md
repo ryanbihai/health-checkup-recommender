@@ -108,6 +108,16 @@ await fetch('/api/book', {
 })
 ```
 
+### 2.3 经验教训
+
+- **元数据权限声明**：在 `_meta.json` 中必须显式声明所需的网络权限，例如：
+  ```json
+  "permissions": {
+    "network": ["https://*.ihaola.com.cn", "http://*.ihaola.com.cn"]
+  }
+  ```
+- **编写安全审计文档**：如果扫描器认为关键代码路径（如 `sync_items.js`）缺乏透明度，建议在仓库中补充 `SECURITY_AUDIT.md`。在该文档中详细说明每个代码路径（成功/回退/错误）中传输的具体字段，并解释第三方服务商的隐私政策，能有效提升人工或自动化审查的通过率。
+
 ---
 
 ## 第三类：依赖项安全审查
@@ -130,7 +140,14 @@ npm list
 
 ### 3.3 经验教训
 
-ClawHub 扫描器会分析 `package.json` 和 `package-lock.json`。尽量保持依赖最小化——只引入确实需要的包。业务逻辑尽量使用 Node.js 内置模块（如 `fs`、`path`、`crypto`），避免引入不熟悉的第三方包。
+- ClawHub 扫描器会分析 `package.json` 和 `package-lock.json`。尽量保持依赖最小化——只引入确实需要的包。业务逻辑尽量使用 Node.js 内置模块（如 `fs`、`path`、`crypto`），避免引入不熟悉的第三方包。
+- **显式声明依赖和安装规范**：注册表元数据（`_meta.json`）与代码库应该保持一致。如果代码中用到了第三方包（如 `qrcode`），必须在 `_meta.json` 中显式声明 `dependencies` 和 `install`，否则会被标记为"未列出运行时依赖项"。
+  ```json
+  "dependencies": {
+    "npm": ["qrcode"]
+  },
+  "install": "npm install"
+  ```
 
 ---
 
@@ -221,6 +238,15 @@ node generate_qr_with_fallback.js --consent=true ./output item029 item131
 - 彻底删除触发误报的解释性文档，不要保留在仓库中
 - 不要在文件名中包含敏感关键词（如 `wmi`, `trojan`, `virus` 等）
 - 不要在文档中详细描述攻击技术的实现细节（即使是以"安全研究"的名义）
+
+### 5.3 经验教训：文件系统读取权限
+
+**现象**：如果在 `SKILL.md` 中声明了“不读取本地敏感文件”，但代码中却使用了 `fs.existsSync('DEBUG_MODE')` 来判断环境，扫描器会将其标记为“与声明相矛盾的文件系统读取”。
+
+**对策**：
+- **移除所有非必要的 `fs` 读取**：尤其是针对配置或环境变量的判断。
+- **使用标准环境变量**：将 `fs.existsSync('DEBUG_MODE')` 替换为 `process.env.NODE_ENV === 'development'`。这样可以实现 100% 纯净运行，无需读取任何本地文件即可区分环境。
+- **谨慎声明**：不要在 `SKILL.md` 中做过于绝对的承诺（如“不读取任何文件”），改为说明“仅在必要时读取自身配置文件”，以防被挑刺。
 
 ---
 

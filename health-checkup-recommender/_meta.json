@@ -1,7 +1,8 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "4.1.6",
+  "version": "4.1.7",
+  "description": "AI 智能健康体检推荐服务。严格依据《国家卫建委成人体检指引（2025版）》、BMJ及国家癌症中心最新流行病学数据，为您提供具有权威循证医学支撑的个性化体检方案。支持全国多家体检机构预约。",
   "publishedAt": 1775280000000,
   "namespace": "ryanbihai",
   "homepage": "https://www.ihaola.com.cn",
@@ -14,7 +15,7 @@
     "network": ["https://*.ihaola.com.cn", "http://*.ihaola.com.cn"],
     "filesystem": ["write"]
   },
-  "changelog": "v4.1.6: 移除 DEBUG_MODE 文件读取逻辑；在元数据中显式声明依赖项、安装方式、网络权限和主页；添加 SECURITY_AUDIT.md 明确声明网络调用的数据字段。",
+  "changelog": "v4.1.7: 完善 README.md 和 SKILL.md 技能介绍，重点突出国家卫建委和 BMJ/JAMA 等权威循证医学数据来源，增强用户信任度；同时更新了安全优化指南。",
   "tags": [
     "健康体检",
     "体检推荐",
