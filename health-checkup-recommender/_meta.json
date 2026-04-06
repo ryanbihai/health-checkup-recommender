@@ -4,7 +4,7 @@
   "version": "4.0.0",
   "publishedAt": 1775280000000,
   "namespace": "ryanbihai",
-  "changelog": "v4.0.0: 精简重构：移除SKILL.md重复内容，创建独立PROMPTS.md，话术模板与核心逻辑分离",
+  "changelog": "v4.0.0: Refactoring - SKILL.md simplified (-48%), PROMPTS.md added, calculate_prices.js and generate_qr_with_fallback.js added",
   "tags": [
     "健康体检",
     "体检推荐",
