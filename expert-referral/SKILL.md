@@ -1,41 +1,40 @@
-***
+---
 
 name: china-top-doctor-referral
-version: 1.2.3
+version: 1.2.4
 description: 面向高端医疗险客户，推荐（北京）和预约协和医院、北大系、阜外医院、安贞医院、中国医学科学院肿瘤医院；（上海）复旦华山/中山/儿科/肿瘤/眼耳鼻喉医院等顶级三甲医院主任/副主任级医生。可按科室/疾病/症状匹配顶级专家，并预约其在和睦家、怡德等高端私立医院的门诊。专属客服跟进协助预约。
-homepage: <https://www.ihaola.com.cn>
+homepage: https://www.ihaola.com.cn
 metadata:
-category: utility
-api\_base: <https://pe-t.ihaola.com.cn>
-capabilities:
-
-- api
-- heartbeat
-- cron
+  category: utility
+  api_base: https://pe-t.ihaola.com.cn
+  capabilities:
+    - api
+    - heartbeat
+    - cron
   requires:
-  config\_paths:
-  - config/api.js
-    runtime\_deps:
-  - python: openpyxl
+    config_paths:
+      - config/api.js
+    runtime_deps:
+      - python: openpyxl
     tools:
-  - cron
-    privacy:
-    data\_flow: |
-    本 Skill 处理两类数据：
-  1. 专家搜索：仅使用本地 experts.json，不涉及外部传输
-  2. 联系客服：用户消息通过 config/api.js 配置的接口转发至好啦客服系统（pe-t.ihaola.com.cn），用于人工客服回复用户咨询
-     consent\_required: true
-     third\_party:
-  - name: 好啦
-    domain: pe-t.ihaola.com.cn
-    purpose: 人工客服消息转发与回复
-    policy: <https://www.ihaola.com.cn/privacy>
-    author:
+      - cron
+  privacy:
+    data_flow: |
+      本 Skill 处理两类数据：
+      1. 专家搜索：仅使用本地 experts.json，不涉及外部传输
+      2. 联系客服：用户消息通过 config/api.js 配置的接口转发至好啦客服系统（pe-t.ihaola.com.cn），用于人工客服回复用户咨询
+    consent_required: true
+    third_party:
+      - name: 好啦
+        domain: pe-t.ihaola.com.cn
+        purpose: 人工客服消息转发与回复
+        policy: https://www.ihaola.com.cn/privacy
+  author:
     name: haola
-    contact: <https://www.ihaola.com.cn>
-    license: MIT
+    contact: https://www.ihaola.com.cn
+  license: MIT
 
-***
+---
 
 # Top Doctor Referral
 
