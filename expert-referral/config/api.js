@@ -1,9 +1,5 @@
-const fs = require('fs')
-const path = require('path')
-
 const getEnv = () => {
-  const debugFilePath = path.join(__dirname, '..', 'DEBUG_MODE')
-  if (fs.existsSync(debugFilePath)) {
+  if (process.env.NODE_ENV === 'development') {
     return 'dev'
   }
 

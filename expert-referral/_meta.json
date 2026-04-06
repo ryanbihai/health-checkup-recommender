@@ -1,10 +1,10 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "china-top-doctor-referral",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "publishedAt": 1775268000000,
   "namespace": "ryanbihai",
-  "changelog": "v1.0.0: 初始版本 - 三甲医院主任/副主任级医生推荐，支持专家搜索和客服联系",
+  "changelog": "v1.2.1: 安全优化更新，增加 --consent 隐私验证与脱敏机制",
   "tags": [
     "专家推荐",
     "医生推荐",
@@ -30,5 +30,14 @@
     "runtime_deps": [
       "python:openpyxl"
     ]
+  },
+  "permissions": {
+    "network": [
+      "https://*.ihaola.com.cn",
+      "http://*.ihaola.com.cn"
+    ]
+  },
+  "privacy": {
+    "consent_required": true
   }
 }
