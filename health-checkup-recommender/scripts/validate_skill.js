@@ -44,6 +44,8 @@ function main() {
   const filesToCheck = [
     'SKILL.md',
     'PROMPTS.md',
+    'README.md',
+    '_meta.json',
     'scripts/generate_qr_with_fallback.js',
     'scripts/sync_items.js'
   ]

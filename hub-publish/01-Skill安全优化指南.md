@@ -261,7 +261,8 @@ const SKILL_ROOT = path.resolve(__dirname, '..')
 const FILES_TO_CHECK = [
   'SKILL.md',
   'PROMPTS.md',
-  '_meta.json'
+  '_meta.json',
+  'README.md'
 ]
 
 function checkFile(filePath) {
