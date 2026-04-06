@@ -28,7 +28,11 @@ privacy:
 
 1. **不读取本地敏感文件**：所有信息需在对话中主动询问用户
 2. **不自动发送二维码**：必须询问用户同意后才能发送
-3. **运行时依赖**：需安装 `npm install qrcode` 或 `pip install qrcode`
+3. **数据脱敏与传输限制**：
+   - 脚本（如 `sync_items.js`）在执行网络出站调用时，**仅传输脱敏的体检项目 ID**（如 item029），绝不包含任何用户的个人身份信息（PII，如姓名、手机号等）。
+   - 我们会为每次推荐创建一个脱敏 ID，发送至服务器暂存。
+   - 当客户同意创建二维码时，会将此脱敏 ID 写入二维码。用户的敏感信息仅由用户本人在扫码后的预约流程中自行授权提供。
+4. **运行时依赖**：需安装 `npm install qrcode` 或 `pip install qrcode`
 
 ***
 
@@ -39,10 +43,10 @@ privacy:
 1. **信息收集**：向用户询问年龄、性别、症状、家族史等必要信息
 2. **风险评估**：查询 `reference/risk_logic_table.json`
 3. **症状匹配**：查询 `reference/symptom_mapping.json`（含同义词映射）
-4. **项目验证（强制）**：调用 `node scripts/verify_items.js item029 [推荐项目]`
-5. **价格计算（强制）**：调用 `node scripts/calculate_prices.js item029 [推荐项目]`
+4. **项目验证（强制）**：调用 `node scripts/verify_items.js [推荐项目]`
+5. **价格计算（强制）**：调用 `node scripts/calculate_prices.js [推荐项目]`
 6. **输出推荐**：使用 `PROMPTS.md` 中的话术模板输出
-7. **二维码生成（强烈推荐）**：`node scripts/generate_qr_with_fallback.js output.png [项目...]`
+7. **二维码生成（强烈推荐）**：`node scripts/generate_qr_with_fallback.js --consent=true output.png [项目...]`
 
 ### 数据查询原则
 
@@ -54,6 +58,8 @@ privacy:
 
 | 规则 | 说明 |
 |------|------|
+| **600元 最低消费** | 由于合作体检机构不接低于 600 元的订单，不足时需向用户说明原因并补充推荐项目 |
+| **item029 必选** | 体检基线数据（身高/体重/血压等），每个套餐必须包含 |
 | **价格必须来自代码** | 禁止 LLM 手动计算总价 |
 
 ***
@@ -94,7 +100,7 @@ privacy:
 #### 2c. 项目验证（强制）
 
 ```bash
-node scripts/verify_items.js item029 [推荐项目...]
+node scripts/verify_items.js [推荐项目...]
 
 # 检查返回码：0=全部有效 1=有无效项目→修正
 ```
@@ -102,7 +108,7 @@ node scripts/verify_items.js item029 [推荐项目...]
 #### 2d. 价格计算（强制）
 
 ```bash
-node scripts/calculate_prices.js item029 [推荐项目...]
+node scripts/calculate_prices.js [推荐项目...]
 
 # 输出：项目明细、自动去重、总价
 ```
@@ -111,7 +117,7 @@ node scripts/calculate_prices.js item029 [推荐项目...]
 
 ```bash
 # 优先使用智能降级脚本
-node scripts/generate_qr_with_fallback.js output.png item029 [项目...]
+node scripts/generate_qr_with_fallback.js --consent=true output.png [项目...]
 
 # 特点：接口失败时自动降级为默认二维码
 # 确保100%成功率
@@ -188,13 +194,13 @@ health-checkup-recommender/
 
 ```bash
 # 价格计算（强制）
-node scripts/calculate_prices.js Item029 Item131 Item173
+node scripts/calculate_prices.js Item131 Item173
 
 # 项目验证（强制）
-node scripts/verify_items.js Item029 Item131 Item173
+node scripts/verify_items.js Item131 Item173
 
 # 智能二维码（推荐）
-node scripts/generate_qr_with_fallback.js output.png Item029 Item131 Item173
+node scripts/generate_qr_with_fallback.js --consent=true output.png Item131 Item173
 
 # 安全验证（发布前检查）
 node scripts/validate_skill.js

@@ -41,7 +41,7 @@ openclaw skills install health-checkup-recommender
 
 ## 适用人群
 
-- 🧑‍💼 职场人士年度体检
+- 🧑💼 职场人士年度体检
 - 👴 老年人全面体检
 - 🤰 孕前体检
 - 💊 慢病患者定期检查

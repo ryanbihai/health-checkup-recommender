@@ -1,10 +1,10 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "4.1.3",
+  "version": "4.1.4",
   "publishedAt": 1775280000000,
   "namespace": "ryanbihai",
-  "changelog": "v4.1.3: 脚本层强制执行 --consent=true；优化业务规则说明（600元最低消费和必选项目的原因透明化）",
+  "changelog": "v4.1.4: 明确同步接口的数据脱敏隐私声明；移除 README.md 中的零宽连字符(ZWJ)以彻底消除提示注入误报",
   "tags": [
     "健康体检",
     "体检推荐",
