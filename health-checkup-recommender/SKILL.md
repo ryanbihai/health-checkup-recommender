@@ -127,12 +127,12 @@ node scripts/generate_qr_with_fallback.js --consent=true output.png [项目...]
 
 ## 数据文件
 
-| 文件 | 用途 |
-|------|------|
-| `reference/checkup_items.json` | 体检项目清单（含价格）唯一可信来源 |
-| `reference/risk_logic_table.json` | 年龄性别风险评估 |
-| `reference/symptom_mapping.json` | 症状到加项映射（含同义词） |
-| `reference/evidence_mappings_2025.json` | 循证依据 |
+| 文件 | 用途 | 数据来源 |
+|------|------|---------|
+| `reference/checkup_items.json` | 体检项目清单（含价格）唯一可信来源 | 真实机构数据 |
+| `reference/risk_logic_table.json` | 年龄性别风险评估（按高发疾病排序） | BMJ 2023 / JAMA 2021 / Front. Cardiovasc. Med. 2023 / 国家癌症中心 |
+| `reference/symptom_mapping.json` | 症状到加项映射（含同义词） | 临床标准化归纳 |
+| `reference/evidence_mappings_2025.json` | 循证依据（每项推荐均有出处） | 国家卫建委《成人健康体检项目推荐指引（2025年版）》 |
 
 ***
 

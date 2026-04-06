@@ -1,6 +1,22 @@
 # 📝 话术与输出模板
 
 > 本文件包含所有话术模板和输出规范，供 AI 在实际对话中使用。
+> 所有推荐均基于**循证医学**依据，拒绝无根据推荐。
+
+---
+
+## 数据来源与循证依据
+
+本技能的数据来源均为权威医学机构公开发布的文献和指南，具有高度可信性：
+
+| 数据文件 | 数据来源 | 权威级别 |
+|---------|---------|---------|
+| `reference/risk_logic_table.json` | BMJ 2023、JAMA 2021、Front. Cardiovasc. Med. 2023、国家癌症中心2022年数据 | 顶级国际期刊 + 国家级数据 |
+| `reference/evidence_mappings_2025.json` | 国家卫建委《成人健康体检项目推荐指引（2025年版）》 | 国家级官方指引 |
+| `reference/symptom_mapping.json` | 临床常见症状标准化归纳 | 医学常识 |
+| `reference/checkup_items.json` | 真实体检机构项目库（实时价格） | 实际数据 |
+
+**重要原则**：推荐项目时，必须在"适用原因"中说明依据来源（国家卫建委或国际指南），让用户感受到推荐是**有据可查**的，而不是随意添加。
 
 ---
 
@@ -37,16 +53,23 @@
 ### 风险评估输出
 
 ```
-【风险评估】{年龄段}岁{性别}，Top3 高发风险：
-① {风险1} ② {风险2} ③ {风险3}
+【风险评估】{年龄段}岁{性别}，Top5 高发风险（循证数据）：
 
+① {风险1}    ② {风险2}    ③ {风险3}
+④ {风险4}    ⑤ {风险5}
+
+📌 健康提示：{notes}（数据来源：BMJ/JAMA/国家癌症中心）
 {family_history_note}
 ```
 
 示例：
 ```
-【风险评估】50岁男性，Top3 高发风险：
-① 心血管疾病 ② 肺癌 ③ 胃癌
+【风险评估】50岁男性，Top5 高发风险（循证数据）：
+
+① 肺癌    ② 心脑血管疾病    ③ 肝癌
+④ 胃癌    ⑤ 结直肠癌
+
+📌 健康提示：心脑血管病已升至第2位，与高血压、糖尿病、血脂异常三大代谢病高度相关。（数据来源：BMJ 2023）
 
 注意：您有高血压家族史，心血管疾病风险提高
 ```
@@ -62,8 +85,8 @@
   {其他项目...}
 
 【加项】➕ {itemID} {名称} ¥{price}
-   适用原因：{依据}
-
+   适用原因：{依据}（来源：{source}）
+```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💰 套餐总价：¥{total}（来自 calculate_prices.js 输出）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -173,18 +196,18 @@ node scripts/generate_qr_with_fallback.js --consent=true output.png Item131 ...
 
 ### 唯一可信来源
 
-| 文件 | 用途 |
-|------|------|
-| `reference/checkup_items.json` | 体检项目清单（含价格） |
-| `reference/risk_logic_table.json` | 年龄性别风险评估 |
-| `reference/symptom_mapping.json` | 症状→加项映射 |
-| `reference/evidence_mappings_2025.json` | 循证依据 |
+| 文件 | 用途 | 数据来源 |
+|------|------|---------|
+| `reference/checkup_items.json` | 体检项目清单（含价格） | 真实机构数据 |
+| `reference/risk_logic_table.json` | 年龄性别风险评估 | BMJ 2023 / JAMA 2021 / 国家癌症中心 |
+| `reference/symptom_mapping.json` | 症状→加项映射 | 临床标准化归纳 |
+| `reference/evidence_mappings_2025.json` | 循证依据（每项均有出处） | 国家卫建委 2025 |
 
 ### 查询顺序
 
-1. **风险评估**：先查 `risk_logic_table.json`
+1. **风险评估**：先查 `risk_logic_table.json`（含每种疾病的循证文献来源，存于 `_meta.data_sources` 中）
 2. **症状匹配**：查 `symptom_mapping.json`（含同义词）
-3. **加项依据**：查 `evidence_mappings_2025.json`
+3. **加项依据**：查 `evidence_mappings_2025.json`（每个项目的 `source` 字段即为引用来源）
 4. **项目价格**：查 `checkup_items.json`
 5. **计算总价**：调用 `calculate_prices.js`
 
