@@ -56,7 +56,7 @@
 ### 推荐套餐输出
 
 ```
-【推荐套餐】（共 {N} 项，含必选 item029）
+【推荐套餐】（共 {N} 项，含必选的基础检查 item029）
 
   item029 常规检查  ¥{price}
   {其他项目...}
@@ -77,26 +77,22 @@
 - **套餐总价**：必须使用 `calculate_prices.js` 计算，禁止手动计算
 - **价格必须精确**：调用脚本获取真实数据
 
-### 底价规则
+### 业务规则说明（必须向用户透明）
 
-**⚠️ ¥600 最低消费**：服务商要求套餐不低于 ¥600
+**⚠️ ¥600 最低预约金额**：由于大部分合作体检机构不接受过低金额的预约单，为确保用户能成功预约体检，系统设置了 ¥600 的最低预约门槛。
+- 若推荐总价不足 ¥600，请告知用户原因，并建议根据用户画像补充有价值的筛查项目（如心血管、肿瘤筛查等）。
 
-- 若推荐总价不足 ¥600
-- 自动根据用户画像补充高风险相关项目
-- 优先补充：心血管、肿瘤筛查等项目
+**⚠️ 基础检查（item029）必选**：
+- 每次体检必须包含基础检查（身高、体重、血压等），因为这是评估整体健康状况的重要基线指标。系统会自动将其加入套餐。
 
 ### 项目选择限制
 
 > ⚠️ **数据库中没有胃镜、肠镜项目**
->
+
 > 如用户有相关需求，只能推荐：
 > - 胃功能项目（item016/item154）
 > - 腹部彩超（item032）
 > - 并说明原因
-
-> ⚠️ **item029 为必选**
->
-> 每个套餐必须包含常规检查（身高+体重+血压），自动加入无需询问
 
 ---
 
@@ -150,7 +146,7 @@
 ### 价格计算（强制）
 
 ```bash
-node scripts/calculate_prices.js Item029 Item131 Item173 ...
+node scripts/calculate_prices.js Item131 Item173 ...
 ```
 
 **必须使用**：禁止手动计算价格
@@ -158,7 +154,7 @@ node scripts/calculate_prices.js Item029 Item131 Item173 ...
 ### 项目验证（强制）
 
 ```bash
-node scripts/verify_items.js Item029 Item131 Item173 ...
+node scripts/verify_items.js Item131 Item173 ...
 ```
 
 **必须使用**：确保项目真实存在
@@ -166,7 +162,7 @@ node scripts/verify_items.js Item029 Item131 Item173 ...
 ### 二维码生成（强烈推荐）
 
 ```bash
-node scripts/generate_qr_with_fallback.js output.png Item029 Item131 ...
+node scripts/generate_qr_with_fallback.js --consent=true output.png Item131 ...
 ```
 
 **特点**：接口失败时自动降级

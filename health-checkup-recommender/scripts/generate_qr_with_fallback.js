@@ -120,30 +120,26 @@ async function smartGenerateQR(outputPath, itemIds) {
 if (require.main === module) {
   const args = process.argv.slice(2)
 
-  if (args.length === 0) {
-    console.log('\n📌 用法:')
-    console.log('  node generate_qr_with_fallback.js [output_path] [item029] [item131] ...')
-    console.log('\n💡 示例:')
-    console.log('  node generate_qr_with_fallback.js output.png Item029 Item131 Item173')
-    console.log('\n🔧 功能说明:')
-    console.log('  1. 优先调用接口获取个性化参数')
-    console.log('  2. 接口失败时自动降级为默认二维码')
-    console.log('  3. 确保二维码始终可用')
-    console.log('\n--- 演示模式 ---')
+  // 解析并移除 consent 标志
+  const consentFlagIndex = args.findIndex(arg => arg === '--consent=true' || arg === '--consent')
+  const hasConsent = consentFlagIndex !== -1
+  
+  if (consentFlagIndex !== -1) {
+    args.splice(consentFlagIndex, 1)
+  }
 
-    smartGenerateQR(
-      path.join(__dirname, '..', '体检预约_demo.png'),
-      ['Item029', 'Item131', 'Item173', 'Item032']
-    ).then(result => {
-      console.log('\n✅ 二维码生成完成')
-      console.log(`📍 路径: ${result.path}`)
-      console.log(`🔗 内容: ${result.content}`)
-      console.log(`📊 来源: ${result.source === 'api' ? '个性化接口' : '降级默认'}`)
-      process.exit(0)
-    }).catch(error => {
-      console.error('\n❌ 生成失败:', error.message)
+  if (args.length === 0 || !hasConsent) {
+    console.log('\n📌 用法:')
+    console.log('  node generate_qr_with_fallback.js --consent=true [output_path] [item029] [item131] ...')
+    console.log('\n⚠️ 安全限制:')
+    console.log('  必须提供 --consent=true 参数，确认已获得用户明确同意生成二维码。')
+    console.log('\n💡 示例:')
+    console.log('  node generate_qr_with_fallback.js --consent=true output.png Item029 Item131 Item173')
+    
+    if (!hasConsent && args.length > 0) {
+      console.error('\n❌ 拒绝执行: 未提供 --consent=true 参数。在生成预约二维码前，必须征得用户同意。')
       process.exit(1)
-    })
+    }
     return
   }
 
