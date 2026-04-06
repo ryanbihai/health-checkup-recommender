@@ -1,10 +1,10 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "china-top-doctor-referral",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "publishedAt": 1775268000000,
   "namespace": "ryanbihai",
-  "changelog": "v1.2.1: 安全优化更新，增加 --consent 隐私验证与脱敏机制",
+  "changelog": "v1.2.2: 更新描述，细化推荐的三甲医院列表；包含v1.2.1的安全优化更新，增加 --consent 隐私验证与脱敏机制",
   "tags": [
     "专家推荐",
     "医生推荐",

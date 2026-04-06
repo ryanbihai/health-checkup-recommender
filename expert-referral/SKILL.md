@@ -1,7 +1,7 @@
 ***
 
 name: china-top-doctor-referral
-version: 1.0.0
+version: 1.2.2
 description: 面向高端医疗险客户，推荐（北京）和预约协和医院、北大系、阜外医院、安贞医院、中国医学科学院肿瘤医院；（上海）复旦华山/中山/儿科/肿瘤/眼耳鼻喉医院等顶级三甲医院主任/副主任级医生。可按科室/疾病/症状匹配顶级专家，并预约其在和睦家、怡德等高端私立医院的门诊。专属客服跟进协助预约。
 homepage: <https://www.ihaola.com.cn>
 metadata:
@@ -49,6 +49,14 @@ capabilities:
 - 复旦华山/中山/儿科/肿瘤/眼耳鼻喉医院等
 - 交大附属瑞金/新华/胸科医院、上海儿童医学中心等
 - 专家出诊渠道：和睦家医院、怡德医院等高端私立机构
+
+### 数据规模
+
+整合三个 Excel 数据源（`reference/experts.json`，共 228 位专家）：
+
+1. 怡德医院专家信息列表 — 北京怡德医院出诊专家
+2. 上海和睦家外院专家合作列表
+3. 和睦家浦西外院专家合作列表
 
 ## 触发词
 
@@ -128,12 +136,13 @@ capabilities:
 **正确调用方式（必须用 exec 工具）：**
 
 ```bash
-# ⚠️ 注意：必须传入 --user_id，不能省略或杜撰
+# ⚠️ 注意：必须传入 --user_id 和 --consent=true，不能省略或杜撰
 cd <skill目录>/scripts
 python3 refer.py notify_cs \
   --user_id "从上下文获取的真实用户身份" \
   --message "用户的消息内容" \
   --channel "{{channel}}" \
+  --consent=true
 ```
 
 ### 自动推送任务执行逻辑 (Agent 必读)
@@ -175,7 +184,7 @@ openclaw cron add \
 
 ### 技术实现
 
-1. 提取真实 user\_id → 调用 `refer.py notify_cs --user_id "真实ID" --message "用户消息"`
+1. 提取真实 user\_id → 调用 `refer.py notify_cs --user_id "真实ID" --message "用户消息" --channel "渠道" --consent=true`
 2. 消息持久化到 `pending_ctx.json`（存储单用户的轮询上下文）
 3. 依赖 Heartbeat 或 Cron 任务定期调用 `refer.py poll_reply`
 4. 脚本输出 `HEARTBEAT_OK` 时触发静默，输出真实内容时通过机器人主动推送。
@@ -223,8 +232,8 @@ expert-referral/
 # 搜索专家
 python3 refer.py search <关键词>
 
-# 发送客服消息（⚠️ --user_id 必填）
-python3 refer.py notify_cs --user_id "<真实用户ID>" --message "<消息内容>"
+# 发送客服消息（⚠️ --user_id 和 --consent=true 必填）
+python3 refer.py notify_cs --user_id "<真实用户ID>" --message "<消息内容>" --channel "<渠道>" --consent=true
 
 # 轮询客服回复（供 cron/heartbeat 调用）
 python3 refer.py poll_reply
