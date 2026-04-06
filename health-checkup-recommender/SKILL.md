@@ -1,28 +1,52 @@
-***
-
+---
 name: health-checkup-recommender
 description: AI 智能健康体检推荐服务。严格依据《国家卫建委成人体检指引（2025版）》、BMJ及国家癌症中心最新流行病学数据，为您提供具有权威循证医学支撑的个性化体检方案。覆盖全国220城市数百家体检机构预约。二维码预约需用户明确同意。
-**触发词：体检,我要体检,身体检查,检查,体检推荐,体检项目,个性化体检,定制体检,体检预约,体检建议,想做体检,需要体检,常规体检,入职体检,全面体检,体检套餐,全身体检**
-requires:
-runtime_deps:
-- npm: qrcode
-- python: qrcode
-privacy:
-  third_party_booking: true
-  third_party_domain: [www.ihaola.com.cn](http://www.ihaola.com.cn)
-  qr_contains_personal_data: false
-  qr_fields: []
-  auto_send_qr: false
-  consent_required: true
-  data_flow: "二维码仅含只读预约摘要，用户需携带身份证就诊；如需提前预约，用户自行到 www.ihaola.com.cn 填写信息"
-
-***
+homepage: https://www.ihaola.com.cn
+metadata:
+  category: utility
+  api_base: https://pe-t.ihaola.com.cn
+  triggers:
+    - 体检
+    - 我要体检
+    - 身体检查
+    - 检查
+    - 体检推荐
+    - 体检项目
+    - 个性化体检
+    - 定制体检
+    - 体检预约
+    - 体检建议
+    - 想做体检
+    - 需要体检
+    - 常规体检
+    - 全面体检
+    - 体检套餐
+    - 全身体检
+  requires:
+    runtime_deps:
+      - npm: qrcode
+      - python: qrcode
+  privacy:
+    third_party_booking: true
+    third_party_domain:
+      - www.ihaola.com.cn
+    qr_contains_personal_data: false
+    qr_fields: []
+    auto_send_qr: false
+    consent_required: true
+    data_flow: |
+      二维码仅含只读预约摘要，用户需携带身份证就诊；如需提前预约，用户自行到 www.ihaola.com.cn 填写信息
+  author:
+    name: haola
+    contact: https://www.ihaola.com.cn
+  license: MIT
+---
 
 # 体检项目推荐技能
 
 > 让每一次体检推荐，都成为客户信任的开始。
 
-***
+---
 
 ## 安全与隐私声明
 
@@ -35,7 +59,7 @@ privacy:
    - 本技能使用的第三方预约服务商为 `ihaola.com.cn`，相关网络调用逻辑和退坡机制说明请参见 `SECURITY_AUDIT.md`。
 4. **运行时依赖**：需在环境中执行 `npm install`（已在 `_meta.json` 声明）
 
-***
+---
 
 ## 核心原则
 
@@ -63,7 +87,7 @@ privacy:
 | **item029 必选** | 体检基线数据（身高/体重/血压等），每个套餐必须包含 |
 | **价格必须来自代码** | 禁止 LLM 手动计算总价 |
 
-***
+---
 
 ## 执行流程
 
@@ -124,7 +148,7 @@ node scripts/generate_qr_with_fallback.js --consent=true output.png [项目...]
 # 确保100%成功率
 ```
 
-***
+---
 
 ## 数据文件
 
@@ -135,7 +159,7 @@ node scripts/generate_qr_with_fallback.js --consent=true output.png [项目...]
 | `reference/symptom_mapping.json` | 症状到加项映射（含同义词） | 临床标准化归纳 |
 | `reference/evidence_mappings_2025.json` | 循证依据（每项推荐均有出处） | 国家卫建委《成人健康体检项目推荐指引（2025年版）》 |
 
-***
+---
 
 ## 话术与输出模板
 
@@ -149,7 +173,7 @@ node scripts/generate_qr_with_fallback.js --consent=true output.png [项目...]
 - 常见问题处理
 - 对话表情使用指南
 
-***
+---
 
 ## 目录结构
 
@@ -177,12 +201,13 @@ health-checkup-recommender/
     validate_skill.js         # 安全验证脚本
 ```
 
-***
+---
 
 ## 版本更新
 
 | 日期 | 版本 | 更新 |
 |------|------|------|
+| 2026-04-06 | 4.1.9 | 修复 SKILL.md YAML frontmatter 格式问题，确保 description 被 ClawHub 正确解析 |
 | 2026-04-06 | 4.1.8 | 同步更新的 description 字段，进一步强调全国覆盖的机构网络和二维码用户同意机制 |
 | 2026-04-06 | 4.1.7 | 完善技能介绍，突出强调国家卫建委和 BMJ/JAMA 等权威循证医学数据来源，增强用户信任度 |
 | 2026-04-06 | 4.1.6 | 修复环境判断本地文件读取风险；在元数据中显式声明 npm 依赖、安装方式和网络请求权限；新增 SECURITY_AUDIT.md 以提供全面的安全审查支持 |
@@ -190,7 +215,7 @@ health-checkup-recommender/
 | 2026-04-06 | 4.1.4 | 明确同步接口的数据脱敏隐私声明；移除 README.md 中的零宽连字符(ZWJ)以彻底消除提示注入误报 |
 | 2026-04-06 | 4.1.0 | 安全修复：清除 Unicode 控制字符，添加安全验证脚本 |
 
-***
+---
 
 ## 快速命令参考
 
@@ -208,6 +233,6 @@ node scripts/generate_qr_with_fallback.js --consent=true output.png Item131 Item
 node scripts/validate_skill.js
 ```
 
-***
+---
 
 **详细话术模板请查看** **`PROMPTS.md`**

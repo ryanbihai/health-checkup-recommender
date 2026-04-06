@@ -1,7 +1,7 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "4.1.8",
+  "version": "4.1.9",
   "description": "AI 智能健康体检推荐服务。严格依据《国家卫建委成人体检指引（2025版）》、BMJ及国家癌症中心最新流行病学数据，为您提供具有权威循证医学支撑的个性化体检方案。覆盖全国220城市数百家体检机构预约。二维码预约需用户明确同意。",
   "publishedAt": 1775280000000,
   "namespace": "ryanbihai",
@@ -15,7 +15,7 @@
     "network": ["https://*.ihaola.com.cn", "http://*.ihaola.com.cn"],
     "filesystem": ["write"]
   },
-  "changelog": "v4.1.8: 同步 SKILL.md 中更新的 description 字段，进一步强调全国覆盖的机构网络和二维码用户同意机制。",
+  "changelog": "v4.1.9: 修复 SKILL.md YAML frontmatter 格式问题，确保 description 被 ClawHub 正确解析",
   "tags": [
     "健康体检",
     "体检推荐",
