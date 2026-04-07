@@ -209,6 +209,7 @@ health-checkup-recommender/
 
 | 日期 | 版本 | 更新 |
 |------|------|------|
+| 2026-04-07 | 4.2.3 | 修复 generate_qr.py 中的 DEBUG_MODE 文件检查，统一使用 NODE_ENV |
 | 2026-04-07 | 4.2.2 | 增强 SECURITY_AUDIT.md 脚本行为矩阵；添加 .gitignore；更新 SKILL.md 网络行为说明 |
 | 2026-04-07 | 4.2.1 | 修复安全扫描告警：移除 config/api.js 中对 .env 文件检查，统一使用 NODE_ENV；调整 validate_skill.js 检查列表 |
 | 2026-04-06 | 4.1.9 | 修复 SKILL.md YAML frontmatter 格式问题，确保 description 被 ClawHub 正确解析 |
