@@ -4,7 +4,7 @@ description: AI 智能健康体检推荐服务。严格依据《国家卫建委�
 homepage: https://www.ihaola.com.cn
 metadata:
   category: utility
-  api_base: https://pe-t.ihaola.com.cn
+  api_base: https://pe.ihaola.com.cn
   triggers:
     - 体检
     - 我要体检
@@ -71,7 +71,7 @@ metadata:
 4. **项目验证（强制）**：调用 `node scripts/verify_items.js [推荐项目]`
 5. **价格计算（强制）**：调用 `node scripts/calculate_prices.js [推荐项目]`
 6. **输出推荐**：使用 `PROMPTS.md` 中的话术模板输出
-7. **二维码生成（强烈推荐）**：`node scripts/generate_qr_with_fallback.js --consent=true output.png [项目...]`
+7. **二维码生成（强烈推荐）**：`node scripts/generate_qr.js --consent=true output.png [项目...]`
 
 ### 数据查询原则
 
@@ -142,7 +142,7 @@ node scripts/calculate_prices.js [推荐项目...]
 
 ```bash
 # 优先使用智能降级脚本
-node scripts/generate_qr_with_fallback.js --consent=true output.png [项目...]
+node scripts/generate_qr.js --consent=true output.png [项目...]
 
 # 特点：接口失败时自动降级为默认二维码
 # 确保100%成功率
@@ -193,7 +193,6 @@ health-checkup-recommender/
   scripts/
     verify_items.js            # 项目验证（强制）
     calculate_prices.js       # 价格计算（强制）
-    generate_qr_with_fallback.js  # 智能降级二维码（推荐）
     sync_items.js              # 项目同步
     check_conflicts.js        # 冲突检测
     generate_qr.js            # 基础二维码
@@ -221,13 +220,13 @@ health-checkup-recommender/
 
 ```bash
 # 价格计算（强制）
-node scripts/calculate_prices.js Item131 Item173
+node scripts/calculate_prices.js item131 item173
 
 # 项目验证（强制）
-node scripts/verify_items.js Item131 Item173
+node scripts/verify_items.js item131 item173
 
 # 智能二维码（推荐）
-node scripts/generate_qr_with_fallback.js --consent=true output.png Item131 Item173
+node scripts/generate_qr.js --consent=true output.png
 
 # 安全验证（发布前检查）
 node scripts/validate_skill.js
