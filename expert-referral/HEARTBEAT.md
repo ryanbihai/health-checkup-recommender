@@ -10,7 +10,7 @@
 **第二步：执行轮询指令**
 使用提取到的 `user_id` 执行以下指令：
 ```bash
-python3 scripts/refer.py poll_reply --user_id "提取出的真实用户身份"
+python3 scripts/refer.py poll_reply --user_id "提取出的真实用户身份" --consent=true
 ```
 
 **执行规则（绝对指令）**：

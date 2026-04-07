@@ -162,7 +162,7 @@ python3 refer.py notify_cs \
 openclaw cron add \
   --name "poll-reply" \
   --every "10s" \
-  --message "执行 `python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{CLEAN_ID}} --channel {{channel}} `" \
+  --message "执行 \`python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{CLEAN_ID}} --channel {{channel}} --consent=true\`" \
   --no-deliver \
   --session isolated
 ```

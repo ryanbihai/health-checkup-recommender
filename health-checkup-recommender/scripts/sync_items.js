@@ -72,10 +72,6 @@ if (require.main === module) {
   }
 
   if (args.length === 0 || !hasConsent) {
-    console.log('\n📌 用法:')
-    console.log('  node sync_items.js --consent=true [item029] [item131] ...')
-    console.log('\n⚠️ 安全限制:')
-    console.log('  必须提供 --consent=true 参数，确认已获得用户明确同意暂存体检项目。')
     if (!hasConsent && args.length > 0) {
       console.error('\n❌ 拒绝执行: 未提供 --consent=true 参数。在同步体检项目前，必须征得用户同意。')
       process.exit(1)

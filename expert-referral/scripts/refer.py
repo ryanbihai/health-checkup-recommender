@@ -238,6 +238,9 @@ class CustomerService:
                         # 重复回复，增量计数但静默跳过
                         count = ctx.get("poll_count", 0) + 1
                         StateManager.save_pending(poll_count=count)
+                        # 轮询计数:超过 20 次 无互动,才自动清理
+                        if count > 20:
+                            StateManager.clear_session()
                         return None
                         
                     # 新回复，保存并返回
@@ -316,6 +319,24 @@ def handle(query=None, user_id=None, action=None, channel=None):
 
 if __name__ == "__main__":
     import argparse
+    import sys
+
+    raw_args = sys.argv[1:]
+    has_consent = False
+    
+    if "--consent=true" in raw_args:
+        has_consent = True
+        raw_args.remove("--consent=true")
+    elif "--consent" in raw_args:
+        has_consent = True
+        raw_args.remove("--consent")
+
+    if len(raw_args) > 0 and raw_args[0] in ["notify_cs", "poll_reply"]:
+        if not has_consent:
+            print("❌ 拒绝执行: 未提供 --consent=true 参数。在与外部系统通信前，必须征得用户同意。")
+            sys.exit(1)
+
+    sys.argv = [sys.argv[0]] + raw_args
 
     parser = argparse.ArgumentParser(description="专家推荐 Skill 引擎")
     sub = parser.add_subparsers(dest="cmd")
@@ -329,7 +350,6 @@ if __name__ == "__main__":
     p_notify.add_argument("--user_id", required=True, help="真实用户身份标识(必须)")
     p_notify.add_argument("--message", required=True, help="发给客服的消息内容")
     p_notify.add_argument("--channel", required=True,  help="渠道")
-    p_notify.add_argument("--consent", required=True, help="确认已获得用户明确同意(必须传入true)")
 
     # poll_reply 子命令(供 cron 调用)
     p_poll = sub.add_parser("poll_reply", help="轮询客服回复")
@@ -343,9 +363,6 @@ if __name__ == "__main__":
         print(ExpertService.search(q))
 
     elif args.cmd == "notify_cs":
-        if args.consent != "true":
-            print("❌ 拒绝执行: 未提供 --consent=true 参数。在发送消息给客服前，必须征得用户同意。")
-            sys.exit(1)
         result = handle(query=args.message, user_id=args.user_id, action="notify_cs", channel=args.channel)
         print(result)
 
