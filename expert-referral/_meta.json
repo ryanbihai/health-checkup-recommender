@@ -27,9 +27,6 @@
     "third_party_booking": "www.ihaola.com.cn",
     "config_paths_read": [
       "config/api.js"
-    ],
-    "runtime_deps": [
-      "python:openpyxl"
     ]
   },
   "permissions": {

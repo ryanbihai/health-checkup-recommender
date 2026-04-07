@@ -13,8 +13,6 @@ metadata:
   requires:
     config_paths:
       - config/api.js
-    runtime_deps:
-      - python: openpyxl
     tools:
       - cron
   privacy:
