@@ -4,41 +4,131 @@
 
 ---
 
-## 1. 核心网络调用说明：`sync_items.js`
+## 1. 脚本行为矩阵（完整透明说明）
 
-扫描器在预扫描时可能无法完整解析包含动态网络调用的脚本。以下是 `scripts/sync_items.js` 的完整执行路径和数据传输说明：
+| 脚本 | 网络请求 | 本地文件读取 | 传输数据 | PII |
+|------|---------|-------------|---------|-----|
+| `verify_items.js` | ❌ 无 | ✅ `checkup_items.json`（只读） | 无 | ❌ 无 |
+| `calculate_prices.js` | ❌ 无 | ✅ `checkup_items.json`（只读） | 无 | ❌ 无 |
+| `check_conflicts.js` | ❌ 无 | ❌ 无 | 无 | ❌ 无 |
+| `sync_items.js` | ✅ 有 | ❌ 无 | `{ itemIds: [...] }` | ❌ 无 |
+| `generate_qr.js` | ❌ 无 | ✅ 写二维码图片 | 无 | ❌ 无 |
 
-### 1.1 数据传输范围（去标识化保证）
-在向 `https://*.ihaola.com.cn` 发起网络同步请求时，**绝不会传输任何个人身份信息（PII，如姓名、电话号码、身份证号码）**。
-唯一传输的有效负载（Payload）为体检项目的纯文本 ID 数组。例如：
+### 1.1 纯本地脚本（无网络）
+
+**verify_items.js**
+- 功能：验证体检项目 ID 有效性、检测冲突项
+- 数据来源：仅读取 `reference/checkup_items.json`
+- 输出：项目有效性结果和价格
+
+**calculate_prices.js**
+- 功能：计算套餐总价
+- 数据来源：仅读取 `reference/checkup_items.json`
+- 输出：价格明细和总价
+
+**check_conflicts.js**
+- 功能：检测同类父子项冲突（如肝功能11项 vs 肝功能15项）
+- 数据来源：无外部依赖
+- 输出：冲突检测结果
+
+**generate_qr.js**
+- 功能：生成本地二维码图片
+- 数据来源：无
+- 输出：PNG 图片文件到本地
+
+### 1.2 网络脚本（sync_items.js）
+
+**唯一会发起网络请求的脚本**
+
+```
+端点：https://pe.ihaola.com.cn/skill/api/recommend/addpack
+方法：POST
+Content-Type: application/json
+```
+
+**请求Payload（唯一传输内容）**：
 ```json
 {
   "itemIds": ["item029", "item131", "item173"]
 }
 ```
 
-### 1.2 代码路径与返回字段
-- **成功路径 (Success)**：API 接收到 `itemIds` 后，仅在服务器侧暂存这些项目组合，并返回两个生成的无特征标识符：`welfareid` 和 `ruleid`。这两个 ID 将被用于生成二维码。
-- **降级路径 (Fallback/Error)**：如果网络请求失败、超时或返回非 200 状态码，系统会自动进入降级模式。此时，将直接使用写死在代码中的静态配置 `default_welfare` 和 `default_rule`，**不发送任何网络请求**。
+**保证**：
+- ❌ 不传输姓名
+- ❌ 不传输手机号
+- ❌ 不传输身份证号
+- ❌ 不传输任何可识别个人的信息
+- ✅ 仅传输脱敏的体检项目 ID
+
+**响应**：
+```json
+{
+  "welfareid": "wxxxxx",
+  "ruleid": "rxxxxx"
+}
+```
+
+这两个 ID 用于生成二维码，扫码后用户在 ihaola 网站上自行填写个人信息。
 
 ---
 
-## 2. 第三方服务商隐私政策与默认配置
+## 2. 二维码内容说明
 
-- **服务商验证**：`ihaola.com.cn` 是受信任的第三方体检预约平台。
-- **隐私政策声明**：用户在扫描由本 Skill 生成的二维码后，将跳转至第三方平台的 H5 页面。只有在用户本人在 H5 页面主动填写个人信息并同意第三方平台的隐私政策后，才会发生真实信息的采集和数据绑定。本 Skill 的 AI 代理层面全程不参与、不接触、不存储任何用户的隐私数据。
-- **`default_welfare` / `default_rule` 配置方式**：这是第三方服务商提供的“通用自选套餐”入口。当接口不可用触发降级时，用户扫码将进入一个不带预设项目的空白预约页面，用户可以根据我们在聊天中推荐的清单，手动勾选对应的体检项目。
+二维码仅包含以下参数：
+```
+https://www.ihaola.com.cn/launch/haola/pe?urlsrc=brief&welfareid=wxxxxx&ruleid=rxxxxx
+```
+
+**二维码中不包含**：
+- 姓名 ❌
+- 手机号 ❌
+- 身份证号 ❌
+- 年龄/性别 ❌
+- 体检结果 ❌
+
+用户在扫码后跳转 H5 页面，自行填写预约信息。
 
 ---
 
-## 3. 本地文件系统访问声明
+## 3. 用户同意强制机制
 
-- **历史问题修复**：旧版本的 `config/api.js` 中包含一段检查本地 `DEBUG_MODE` 文件是否存在的代码，这与 SKILL.md 中声明的“不读取本地敏感文件”产生了理解上的矛盾。
-- **当前状态**：在当前版本（v4.1.6+）中，我们已经**彻底删除了所有 `fs.existsSync` 检查本地环境文件的代码**。环境变量完全通过标准的 `NODE_ENV` 读取，实现了 100% 的纯净运行，不读取任何未授权的本地文件。
+所有涉及用户数据的操作必须携带 `--consent=true` 参数：
+
+```bash
+# 同步项目（需要同意）
+node scripts/sync_items.js --consent=true item029 item131
+
+# 生成二维码（需要同意）
+node scripts/generate_qr.js --consent=true output.png w123 r456
+```
+
+无此参数时脚本拒绝执行并报错。
 
 ---
 
-## 4. 依赖项与安装规范
+## 4. 本地文件系统访问声明
 
-- **运行时依赖**：本 Skill 仅依赖用于生成本地图片的开源包 `qrcode`。
-- **安装规范**：请在运行环境中使用 `npm install` 安装 `package.json` 中声明的依赖，或使用 `pip install qrcode`（如调用 Python 备用脚本）。此依赖项已在 `_meta.json` 的顶层 `dependencies` 和 `install` 字段中显式声明，以符合平台的安装规范审查。
+- **已修复**：旧版本 `config/api.js` 检查 `.env` 文件已被移除
+- **当前实现**：仅使用 `process.env.NODE_ENV` 判断环境，无任何本地文件读取
+- **配置文件**：`reference/` 目录下的 JSON 文件是 Skill 数据包的一部分，非敏感配置
+
+---
+
+## 5. 第三方服务商隐私政策
+
+- **服务商**：`ihaola.com.cn`（北京聚合科技有限公司）
+- **数据处理**：用户在扫码后与 ihaola 平台直接交互，遵循其隐私政策
+- **本 Skill**：仅生成预约链接，不存储、不处理任何个人数据
+
+---
+
+## 6. 依赖项与安装规范
+
+| 依赖 | 用途 | 声明位置 |
+|------|------|---------|
+| `qrcode` (npm) | 生成二维码图片 | `package.json` + `_meta.json` |
+| `qrcode` (pip) | Python 备用脚本 | `_meta.json` |
+
+---
+
+*最后更新：2026-04-07*
