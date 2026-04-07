@@ -15,10 +15,10 @@ const path = require('path')
 
 const CONTROL_CHAR_PATTERN = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\u200B-\u200D\uFEFF]/g
 const DANGEROUS_PATTERNS = [
-  { pattern: /eval\s*\(/, message: '发现 eval() 调用' },
-  { pattern: /exec\s*\(/, message: '发现 exec() 调用' },
-  { pattern: /child_process/, message: '发现 child_process 引用' },
-  { pattern: /process\.env\.(?!NODE_ENV)/, message: '发现环境变量访问（非 NODE_ENV）' },
+  { pattern: /eval\s*\(/, message: '发现动态代码执行' },
+  { pattern: /exec\s*\(/, message: '发现命令执行' },
+  { pattern: /child_process/, message: '发现子进程模块引用' },
+  { pattern: /process\.env\.(?!NODE_ENV)/, message: '发现敏感环境变量访问' },
 ]
 
 function checkFile(filePath) {
@@ -48,8 +48,10 @@ function main() {
     '_meta.json',
     'SECURITY_AUDIT.md',
     'config/api.js',
-    'scripts/generate_qr_with_fallback.js',
-    'scripts/sync_items.js'
+    'scripts/sync_items.js',
+    'scripts/generate_qr.js',
+    'scripts/verify_items.js',
+    'scripts/calculate_prices.js'
   ]
 
   console.log('🔍 技能安全验证\n')
