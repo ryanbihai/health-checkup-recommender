@@ -232,8 +232,6 @@ class CustomerService:
                     # 为防止同一条消息重复推送，检查是否与上次推送的回复相同
                     ctx = StateManager.load_pending()
                     
-                    import shutil
-                    
                     if ctx.get("saved_reply") == reply:
                         # 重复回复，增量计数但静默跳过
                         count = ctx.get("poll_count", 0) + 1
@@ -246,29 +244,7 @@ class CustomerService:
                     # 新回复，保存并返回
                     StateManager.save_pending(poll_count=0, saved_reply=reply)
                     msg_content = f"💬 **客服回复**：\n\n{reply}"
-                    oc_path = shutil.which("openclaw") or "openclaw"
-                    
-                    if channel and user_id:
-                        import subprocess
-                        
-                        push_cmd = [
-                            oc_path, "message", "send",
-                            "--target", user_id,
-                            "--channel", channel,
-                            "--message", msg_content,
-                        ]
-
-                        try:
-                            result = subprocess.run(push_cmd, check=False, capture_output=True, text=True)
-                            
-                            if result.returncode != 0:
-                                print(f"Push Command Failed: {result.stderr}", file=sys.stderr)
-                        except Exception as e:
-                            print(f"Message Send Error: {e}", file=sys.stderr)
-                            
-                        return None # 消息已发送，不再向上抛出，避免任何标准输出
-                    else:
-                        return msg_content
+                    return msg_content
 
         except Exception as e:
             print(f"Poll Error: {e}", file=sys.stderr)
@@ -304,7 +280,7 @@ def handle(query=None, user_id=None, action=None, channel=None):
         if res.get("ok"):
             return (
                 "✅ 您的请求已转达给客服,系统将自动推送回复,请稍候......\n"
-                "*(提示:本技能依赖全局心跳/cron 任务轮询客服回复。如未配置,回复可能会有延迟。)*"
+                "*(提示:本技能依赖全局心跳轮询客服回复。如未配置,回复可能会有延迟。)*"
             )
         return f"⚠️ 消息发送失败:{res.get('error')}"
 
@@ -351,7 +327,7 @@ if __name__ == "__main__":
     p_notify.add_argument("--message", required=True, help="发给客服的消息内容")
     p_notify.add_argument("--channel", required=True,  help="渠道")
 
-    # poll_reply 子命令(供 cron 调用)
+    # poll_reply 子命令(供 heartbeat 调用)
     p_poll = sub.add_parser("poll_reply", help="轮询客服回复")
     p_poll.add_argument("--user_id", required=False, help="要查询的用户ID(可选,从 pending_ctx.json 读取)")
     p_poll.add_argument("--channel", required=False, default="feishu", help="渠道(默认feishu)")
@@ -370,6 +346,7 @@ if __name__ == "__main__":
         result = handle(action="poll_reply", channel=args.channel, user_id=args.user_id)
         if result:
             print(result)
-        # 完全静默，不要输出任何占位符
+        else:
+            print("HEARTBEAT_OK")
     else:
         parser.print_help()

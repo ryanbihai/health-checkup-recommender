@@ -9,12 +9,9 @@ metadata:
   capabilities:
     - api
     - heartbeat
-    - cron
   requires:
     config_paths:
       - config/api.js
-    tools:
-      - cron
   privacy:
     data_flow: |
       本 Skill 处理两类数据：
@@ -103,7 +100,7 @@ metadata:
            ↓
       消息持久化到 pending_ctx.json
            ↓
-      cron/heartbeat 定期调用 refer.py poll_reply
+      heartbeat 定期调用 refer.py poll_reply
            ↓
       外部 API 返回客服回复 → 推送用户
 ```
@@ -142,46 +139,22 @@ python3 refer.py notify_cs \
 
 ### 自动推送任务执行逻辑 (Agent 必读)
 
-当用户发起「联系客服」请求并成功调用 `notify_cs` 后，你必须创建一个后台轮询任务来等待客服回复。
+当用户发起「联系客服」请求并成功调用 `notify_cs` 后，你**不需要**创建任何后台任务。
 
-**默认方案：Cron 定时任务**
+你需要直接告诉用户：
 
-1. **提取环境变量**：
-   - `{{user_id}}`: 当前用户的真实平台 ID。
-   - `{{channel}}`: 当前对话的渠道名（如 feishu, web, telegram 等）。
-   - `{{skill_path}}`: 当前 Skill 的绝对路径。
-2. **ID 清洗规则（关键）**
-   为了防止推送失败，你必须从 {{user_id}} 中提取出原始平台 ID（去除 OpenClaw 内部路由前缀）：
-   规则：如果 {{user_id}} 包含冒号 :，请务必仅保留最后一个冒号之后的内容作为 CLEAN_ID。
-   示例：若 {{user_id}} 为 agent:main:feishu:direct:abc_123，则 CLEAN_ID 为 abc_123。
-   示例：若 {{user_id}} 为 admin，则 CLEAN_ID 为 admin。
-3. **执行指令（严格执行）**：
-   直接调用 Python 解释器运行脚本，确保搬运地址（--to 和 --channel）准确无误：
-
-```bash
-openclaw cron add \
-  --name "poll-reply" \
-  --every "10s" \
-  --message "执行 \`python3 {{skill_path}}/scripts/refer.py poll_reply --user_id {{CLEAN_ID}} --channel {{channel}} --consent=true\`" \
-  --no-deliver \
-  --session isolated
-```
-
-**高级备选方案：全局 Heartbeat（需用户手动配置）**
-如果你检测到（或用户明确告知）当前系统的主工作区（Workspace）下的 `HEARTBEAT.md` 中已经手动整合了本 Skill 的轮询任务，且全局心跳服务已开启。
-此时你**不需要**创建 Cron 任务。只需直接告诉用户：
-
-> ✅ 您的请求已转达给客服。系统将在后台持续为您关注，一旦有回复会第一时间发给您。
+> ✅ 您的请求已转达给客服。由于安全限制，系统不会自动创建后台进程。
+> 请您按照本 Skill 的配置指引，将本目录下的 `HEARTBEAT.md`集成到您的全局工作区中，以开启自动轮询。
 
 #### 提示：如何为用户配置全局 Heartbeat？
 
-如果用户抱怨 Cron 任务有时会有废话，或者希望更极致的静默体验，你可以建议他们将本 Skill 目录下的 `HEARTBEAT.md` 内容复制并追加到他们全局工作区（通常是 `~/.openclaw/workspace/HEARTBEAT.md`）的文件中，并运行 `openclaw system heartbeat enable`。配置完成后，就可以彻底抛弃 Cron 方案了。
+你可以建议他们将本 Skill 目录下的 `HEARTBEAT.md` 内容复制并追加到他们全局工作区（通常是 `~/.openclaw/workspace/HEARTBEAT.md`）的文件中，并运行 `openclaw system heartbeat enable`。配置完成后，系统便会安全地进行静默轮询。
 
 ### 技术实现
 
 1. 提取真实 user_id → 调用 `refer.py notify_cs --user_id "真实ID" --message "用户消息" --channel "渠道" --consent=true`
 2. 消息持久化到 `pending_ctx.json`（存储单用户的轮询上下文）
-3. 依赖 Heartbeat 或 Cron 任务定期调用 `refer.py poll_reply`
+3. 依赖 全局心跳定期调用 `refer.py poll_reply`
 4. 脚本输出 `HEARTBEAT_OK` 时触发静默，输出真实内容时通过机器人主动推送。
 
 ### 配置
@@ -229,7 +202,7 @@ python3 refer.py search <关键词>
 # 发送客服消息（⚠️ --user_id 和 --consent=true 必填）
 python3 refer.py notify_cs --user_id "<真实用户ID>" --message "<消息内容>" --channel "<渠道>" --consent=true
 
-# 轮询客服回复（供 cron/heartbeat 调用）
+# 轮询客服回复（供 heartbeat 调用）
 python3 refer.py poll_reply
 ```
 
@@ -249,7 +222,7 @@ python3 refer.py poll_reply
 ### 前置要求
 
 1. **配置文件**：安装后需配置 `config/api.js`，包含好啦客服接口地址
-2. **Cron/Heartbeat**：如需自动接收客服回复，需配置定时轮询任务
+2. **Heartbeat**：如需自动接收客服回复，需配置定时轮询任务
 3. **用户同意**：使用联系客服功能前，请确保用户知晓消息将被转发至人工客服
 
 ### 隐私保护建议
