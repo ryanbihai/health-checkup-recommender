@@ -1,7 +1,7 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "4.3.1",
+  "version": "4.3.2",
   "description": "AI 智能健康体检推荐服务。严格依据《国家卫建委成人体检指引（2025版）》、BMJ及国家癌症中心最新流行病学数据，为您提供具有权威循证医学支撑的个性化体检方案。覆盖全国220城市数百家体检机构预约。二维码预约需用户明确同意。",
   "publishedAt": 1775280000000,
   "namespace": "ryanbihai",
@@ -15,7 +15,7 @@
     "network": ["https://*.ihaola.com.cn", "http://*.ihaola.com.cn"],
     "filesystem": ["write"]
   },
-  "changelog": "v4.3.1: 完善 SECURITY_AUDIT.md 脚本行为矩阵，新增 generate_qr.py 和 validate_skill.js 的透明说明\nv4.3.0: 完成 itemXXX 到 HaoLaXX 格式全面迁移；新增个人化风险解读（personal_explanations）；所有涉及用户同意的脚本已实现 --consent 硬执行\nv4.2.3: 修复 generate_qr.py 中的 DEBUG_MODE 文件检查，统一使用 NODE_ENV",
+  "changelog": "v4.3.2: 完善脚本行为矩阵透明度，解决 OpenClaw 安全扫描\"可疑\"告警\nv4.3.0: 完成 itemXXX 到 HaoLaXX 格式全面迁移；新增个人化风险解读（personal_explanations）；所有涉及用户同意的脚本已实现 --consent 硬执行",
   "tags": [
     "健康体检",
     "体检推荐",
