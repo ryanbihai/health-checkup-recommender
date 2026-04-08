@@ -18,8 +18,7 @@ import sys
 import os
 
 def get_domain():
-    debug_file_path = os.path.join(os.path.dirname(__file__), '..', 'DEBUG_MODE')
-    if os.path.exists(debug_file_path):
+    if os.environ.get('NODE_ENV') == 'development':
         return 'https://t.ihaola.com.cn'
     return 'https://www.ihaola.com.cn'
 

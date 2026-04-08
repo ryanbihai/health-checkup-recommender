@@ -1,7 +1,7 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "health-checkup-recommender",
-  "version": "4.1.9",
+  "version": "4.2.3",
   "description": "AI 智能健康体检推荐服务。严格依据《国家卫建委成人体检指引（2025版）》、BMJ及国家癌症中心最新流行病学数据，为您提供具有权威循证医学支撑的个性化体检方案。覆盖全国220城市数百家体检机构预约。二维码预约需用户明确同意。",
   "publishedAt": 1775280000000,
   "namespace": "ryanbihai",
@@ -15,7 +15,7 @@
     "network": ["https://*.ihaola.com.cn", "http://*.ihaola.com.cn"],
     "filesystem": ["write"]
   },
-  "changelog": "v4.1.9: 修复 SKILL.md YAML frontmatter 格式问题，确保 description 被 ClawHub 正确解析",
+  "changelog": "v4.2.3: 修复 generate_qr.py 中的 DEBUG_MODE 文件检查，统一使用 NODE_ENV\nv4.2.2: 增强 SECURITY_AUDIT.md 脚本行为矩阵；添加 .gitignore 排除测试文件；更新 SKILL.md 网络行为说明\nv4.2.1: 修复安全扫描告警：移除 config/api.js 中对 .env 文件的检查，统一使用 NODE_ENV；调整 validate_skill.js 检查列表避免误报；更新 SKILL.md 隐私声明确保与实现一致\nv4.2.0: 修复 evidence_mappings_2025.json 数据残缺问题，新增9项循证条目，覆盖率从11.2%提升至15.4%；补充基线项目（item029/131/167/125/173）循证依据；新增关键癌症筛查项（AFP、腹部彩超、甲状腺彩超、CA125）；优化LDCT年龄限制（30岁以上有风险因素者）",
   "tags": [
     "健康体检",
     "体检推荐",

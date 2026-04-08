@@ -50,14 +50,16 @@ metadata:
 
 ## 安全与隐私声明
 
-1. **不读取本地敏感文件**：已彻底移除环境配置文件检查，所有信息需在对话中主动询问用户（详见 `SECURITY_AUDIT.md`）
+1. **不读取本地敏感文件**：所有配置均通过标准环境变量（`NODE_ENV`）控制，无需读取本地配置文件
 2. **不自动发送二维码**：必须询问用户同意后才能发送
 3. **数据脱敏与传输限制**：
-   - 脚本（如 `sync_items.js`）在执行网络出站调用时，**仅传输脱敏的体检项目 ID**（如 item029），绝不包含任何用户的个人身份信息（PII，如姓名、手机号等）。
-   - 我们会为每次推荐创建一个脱敏 ID，发送至服务器暂存。
-   - 当客户同意创建二维码时，会将此脱敏 ID 写入二维码。用户的敏感信息仅由用户本人在扫码后的预约流程中自行授权提供。
-   - 本技能使用的第三方预约服务商为 `ihaola.com.cn`，相关网络调用逻辑和退坡机制说明请参见 `SECURITY_AUDIT.md`。
-4. **运行时依赖**：需在环境中执行 `npm install`（已在 `_meta.json` 声明）
+   - **仅一个脚本发起网络请求**：`scripts/sync_items.js`（项目同步）
+   - **传输内容**：`{ itemIds: ["item029", "item131"] }` — 仅脱敏的体检项目 ID
+   - **绝不传输**：姓名、手机号、身份证号或任何 PII
+   - **二维码内容**：仅含 `welfareid`/`ruleid` 两个脱敏预约码，无任何个人信息
+   - 详细说明见 `SECURITY_AUDIT.md`
+4. **脚本行为一览**：verify_items.js、calculate_prices.js、check_conflicts.js 为纯本地处理，generate_qr.js 仅生成本地图片
+5. **运行时依赖**：需在环境中执行 `npm install`（已在 `_meta.json` 声明）
 
 ---
 
@@ -207,6 +209,9 @@ health-checkup-recommender/
 
 | 日期 | 版本 | 更新 |
 |------|------|------|
+| 2026-04-07 | 4.2.3 | 修复 generate_qr.py 中的 DEBUG_MODE 文件检查，统一使用 NODE_ENV |
+| 2026-04-07 | 4.2.2 | 增强 SECURITY_AUDIT.md 脚本行为矩阵；添加 .gitignore；更新 SKILL.md 网络行为说明 |
+| 2026-04-07 | 4.2.1 | 修复安全扫描告警：移除 config/api.js 中对 .env 文件检查，统一使用 NODE_ENV；调整 validate_skill.js 检查列表 |
 | 2026-04-06 | 4.1.9 | 修复 SKILL.md YAML frontmatter 格式问题，确保 description 被 ClawHub 正确解析 |
 | 2026-04-06 | 4.1.8 | 同步更新的 description 字段，进一步强调全国覆盖的机构网络和二维码用户同意机制 |
 | 2026-04-06 | 4.1.7 | 完善技能介绍，突出强调国家卫建委和 BMJ/JAMA 等权威循证医学数据来源，增强用户信任度 |

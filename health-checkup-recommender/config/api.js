@@ -1,6 +1,3 @@
-const fs = require('fs')
-const path = require('path')
-
 const envMap = {
   dev: {
     domain: 'https://t.ihaola.com.cn',
@@ -13,8 +10,7 @@ const envMap = {
 }
 
 const getEnv = () => {
-  const envFilePath = path.join(__dirname, '..', '.env')
-  if (fs.existsSync(envFilePath) || process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development') {
     return 'dev'
   }
   return 'prod'
