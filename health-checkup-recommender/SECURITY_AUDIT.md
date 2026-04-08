@@ -13,6 +13,8 @@
 | `check_conflicts.js` | ❌ 无 | ❌ 无 | 无 | ❌ 无 |
 | `sync_items.js` | ✅ 有 | ❌ 无 | `{ itemIds: [...] }` | ❌ 无 |
 | `generate_qr.js` | ❌ 无 | ✅ 写二维码图片 | 无 | ❌ 无 |
+| `generate_qr.py` | ❌ 无 | ✅ 写二维码图片 | 无 | ❌ 无 |
+| `validate_skill.js` | ❌ 无 | ✅ 只读自身目录文件 | 无 | ❌ 无 |
 
 ### 1.1 纯本地脚本（无网络）
 
