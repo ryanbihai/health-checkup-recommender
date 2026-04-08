@@ -108,8 +108,9 @@ node scripts/generate_qr.js --consent=true output.png w123 r456
 
 ## 4. 本地文件系统访问声明
 
-- **已修复**：旧版本 `config/api.js` 检查 `.env` 文件已被移除
-- **当前实现**：仅使用 `process.env.NODE_ENV` 判断环境，无任何本地文件读取
+- **已修复**：旧版本 `config/api.js` 和 `generate_qr.py` 检查 `DEBUG_MODE`/`.env` 文件已被移除
+- **当前实现**：所有环境判断统一使用 `NODE_ENV` 环境变量，无任何本地文件读取
+- **Python 脚本**：同样使用 `os.environ.get('NODE_ENV')` 判断环境
 - **配置文件**：`reference/` 目录下的 JSON 文件是 Skill 数据包的一部分，非敏感配置
 
 ---

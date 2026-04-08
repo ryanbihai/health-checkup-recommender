@@ -108,7 +108,28 @@ await fetch('/api/book', {
 })
 ```
 
-### 2.3 经验教训
+### 2.3 脚本行为矩阵（透明化声明）
+
+扫描器无法完全解析所有脚本代码时，会对"未完全可见"的代码产生疑虑。建议在 `SECURITY_AUDIT.md` 中提供每个脚本的行为矩阵，明确说明：
+
+| 脚本 | 网络请求 | 本地文件读取 | 传输数据 | PII |
+|------|---------|-------------|---------|-----|
+| `verify_items.js` | ❌ 无 | ✅ 只读 JSON | 无 | ❌ 无 |
+| `calculate_prices.js` | ❌ 无 | ✅ 只读 JSON | 无 | ❌ 无 |
+| `sync_items.js` | ✅ 有 | ❌ 无 | `{ itemIds: [...] }` | ❌ 无 |
+| `generate_qr.js` | ❌ 无 | ✅ 写图片 | 无 | ❌ 无 |
+
+**矩阵说明示例**：
+```markdown
+### sync_items.js（唯一网络脚本）
+- 端点：`https://pe.ihaola.com.cn/skill/api/recommend/addpack`
+- 方法：POST
+- 请求体：`{ "itemIds": ["item029", "item131"] }`
+- 不传输：姓名、手机号、身份证号
+- 响应：`{ "welfareid": "wxxxxx", "ruleid": "rxxxxx" }`
+```
+
+### 2.4 经验教训
 
 - **元数据权限声明**：在 `_meta.json` 中必须显式声明所需的网络权限，例如：
   ```json
@@ -117,6 +138,7 @@ await fetch('/api/book', {
   }
   ```
 - **编写安全审计文档**：如果扫描器认为关键代码路径（如 `sync_items.js`）缺乏透明度，建议在仓库中补充 `SECURITY_AUDIT.md`。在该文档中详细说明每个代码路径（成功/回退/错误）中传输的具体字段，并解释第三方服务商的隐私政策，能有效提升人工或自动化审查的通过率。
+- **多语言脚本检查**：不仅检查 JavaScript/TypeScript，也要检查 Python、Shell 等脚本中的文件读取行为（如 `os.path.exists()`、`test -f` 等）
 
 ---
 
@@ -227,8 +249,69 @@ node generate_qr_with_fallback.js --consent=true ./output item029 item131
 | `*.log` | 日志文件，可能包含敏感信息 |
 | `node_modules/` | 依赖包，通过 npm install 安装 |
 | `FALSE_POSITIVE_REPORT.md` | 解释误报原因的文档 |
+| `*.png` / `*.jpg` | 测试生成的图片文件 |
 
-### 5.2 经验教训：避免触发"敏感词"误报
+### 5.2 创建 .gitignore
+
+```gitignore
+# Test/demo output files
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+```
+
+### 5.3 文件读取一致性检查
+
+**常见问题**：SKILL.md 声明"不读取本地敏感文件"，但代码中使用了文件检查：
+
+```javascript
+// ❌ 错误：会触发"声明与实现不一致"告警
+const envFilePath = path.join(__dirname, '..', '.env')
+if (fs.existsSync(envFilePath)) {
+  return 'dev'
+}
+```
+
+**正确做法**：使用标准环境变量
+
+```javascript
+// ✅ 正确：仅使用 NODE_ENV，无任何文件读取
+if (process.env.NODE_ENV === 'development') {
+  return 'dev'
+}
+```
+
+**Python 脚本同样适用**：
+
+```python
+# ❌ 错误
+if os.path.exists('DEBUG_MODE'):
+    return 'https://t.ihaola.com.cn'
+
+# ✅ 正确
+import os
+if os.environ.get('NODE_ENV') == 'development':
+    return 'https://t.ihaola.com.cn'
+```
+
+### 5.4 经验教训：避免触发"敏感词"误报
 
 **现象**：曾创建了一个 `FALSE_POSITIVE_REPORT.md` 文件，试图解释"为什么 `calls-wmi` 是误报"。但扫描器即使在 Markdown 纯文本中检测到 `calls-wmi` 字符串，依然会触发病毒告警。
 
@@ -239,14 +322,15 @@ node generate_qr_with_fallback.js --consent=true ./output item029 item131
 - 不要在文件名中包含敏感关键词（如 `wmi`, `trojan`, `virus` 等）
 - 不要在文档中详细描述攻击技术的实现细节（即使是以"安全研究"的名义）
 
-### 5.3 经验教训：文件系统读取权限
+### 5.5 经验教训：文件系统读取权限
 
-**现象**：如果在 `SKILL.md` 中声明了“不读取本地敏感文件”，但代码中却使用了 `fs.existsSync('DEBUG_MODE')` 来判断环境，扫描器会将其标记为“与声明相矛盾的文件系统读取”。
+**现象**：如果在 `SKILL.md` 中声明了"不读取本地敏感文件"，但代码中却使用了 `fs.existsSync('DEBUG_MODE')` 来判断环境，扫描器会将其标记为"与声明相矛盾的文件系统读取"。
 
 **对策**：
 - **移除所有非必要的 `fs` 读取**：尤其是针对配置或环境变量的判断。
 - **使用标准环境变量**：将 `fs.existsSync('DEBUG_MODE')` 替换为 `process.env.NODE_ENV === 'development'`。这样可以实现 100% 纯净运行，无需读取任何本地文件即可区分环境。
-- **谨慎声明**：不要在 `SKILL.md` 中做过于绝对的承诺（如“不读取任何文件”），改为说明“仅在必要时读取自身配置文件”，以防被挑刺。
+- **谨慎声明**：不要在 `SKILL.md` 中做过于绝对的承诺（如"不读取任何文件"），改为说明"仅在必要时读取自身配置文件"，以防被挑刺。
+- **多语言一致**：Python、Shell 等脚本中同样要避免文件检查，使用 `os.environ.get()` 或 `test -z "$NODE_ENV"`
 
 ---
 
@@ -296,10 +380,10 @@ const path = require('path')
 
 const CONTROL_CHAR_PATTERN = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\u200B-\u200D\uFEFF]/g
 const DANGEROUS_PATTERNS = [
-  /eval\s*\(/,
-  /exec\s*\(/,
-  /child_process/,
-  /process\.env\.(?!NODE_ENV)/
+  { pattern: /eval\s*\(/, message: '发现动态代码执行' },
+  { pattern: /exec\s*\(/, message: '发现命令执行' },
+  { pattern: /child_process/, message: '发现子进程模块引用' },
+  { pattern: /process\.env\.(?!NODE_ENV)/, message: '发现敏感环境变量访问' },
 ]
 
 const SKILL_ROOT = path.resolve(__dirname, '..')
@@ -307,7 +391,13 @@ const FILES_TO_CHECK = [
   'SKILL.md',
   'PROMPTS.md',
   'README.md',
-  '_meta.json'
+  '_meta.json',
+  'SECURITY_AUDIT.md',
+  'config/api.js',
+  'scripts/sync_items.js',
+  'scripts/generate_qr.js',
+  'scripts/verify_items.js',
+  'scripts/calculate_prices.js'
 ]
 
 function checkFile(filePath) {
@@ -316,13 +406,13 @@ function checkFile(filePath) {
   const errors = []
 
   const controlChars = content.match(CONTROL_CHAR_PATTERN)
-  if (controlChars) {
-    errors.push(`⚠️  发现 ${controlChars.length} 个 Unicode 控制字符`)
+  if (controlChars && controlChars.length > 0) {
+    errors.push(`⚠️  发现 ${controlChars.length} 个隐藏的 Unicode 控制字符`)
   }
 
-  for (const pattern of DANGEROUS_PATTERNS) {
+  for (const { pattern, message } of DANGEROUS_PATTERNS) {
     if (pattern.test(content)) {
-      errors.push(`⚠️  发现可疑模式: ${pattern}`)
+      errors.push(`❌ ${message}`)
     }
   }
 
@@ -330,28 +420,50 @@ function checkFile(filePath) {
 }
 
 function main() {
-  console.log('🔍 Skill 安全检查...\n')
-  let hasErrors = false
+  console.log('🔍 技能安全验证\n')
+  console.log('='.repeat(50))
+
+  let hasIssues = false
 
   for (const file of FILES_TO_CHECK) {
-    const result = checkFile(path.join(SKILL_ROOT, file))
-    if (result.errors.length > 0) {
-      hasErrors = true
-      console.log(`❌ ${result.path}`)
-      result.errors.forEach(e => console.log(`   ${e}`))
+    const filePath = path.join(SKILL_ROOT, file)
+    if (!fs.existsSync(filePath)) continue
+
+    console.log(`\n📄 检查: ${file}`)
+    const issues = checkFile(filePath)
+
+    if (issues.length === 0) {
+      console.log('   ✅ 无问题')
+    } else {
+      hasIssues = true
+      for (const issue of issues) {
+        console.log(`   ${issue}`)
+      }
     }
   }
 
-  if (hasErrors) {
-    console.log('\n❌ 检查未通过，请修复以上问题后再发布。')
+  console.log('\n' + '='.repeat(50))
+
+  if (hasIssues) {
+    console.log('\n❌ 验证失败：发现安全问题')
     process.exit(1)
   } else {
-    console.log('✅ 所有检查通过。')
+    console.log('\n✅ 验证通过：所有文件安全')
+    process.exit(0)
   }
 }
 
-main()
+if (require.main === module) {
+  main()
+}
+
+module.exports = { checkFile, CONTROL_CHAR_PATTERN }
 ```
+
+**关键改进**：
+1. **不检查自身**：`FILES_TO_CHECK` 不包含 `validate_skill.js`，避免自检误报
+2. **消息更友好**：使用描述性消息而非直接显示正则
+3. **覆盖关键脚本**：检查所有涉及网络或配置的脚本
 
 在本地运行：
 
@@ -444,12 +556,21 @@ git push
 **安全检查**
 
 - [ ] `SKILL.md` 和 `PROMPTS.md` 中不包含 Unicode 控制字符
+- [ ] 所有 Markdown 文件（包括 README.md、SECURITY_AUDIT.md）无 Unicode 控制字符
+- [ ] **代码声明一致性**：SKILL.md 中的隐私声明与代码实现一致
+- [ ] **无本地文件读取**：所有脚本（JS/Python/Shell）使用 `NODE_ENV` 环境变量，无 `fs.existsSync()`、`os.path.exists()` 等文件检查
 - [ ] 所有网络请求脚本已审查，确认只传输最小必要数据
 - [ ] `package.json` 中的依赖均为必要且可信的包
 - [ ] 涉及网络通信的脚本已实现 `--consent=true` 硬执行
 - [ ] 已删除 `DEBUG_MODE`、`.env`、日志文件、`FALSE_POSITIVE_REPORT.md` 等敏感文件
 - [ ] 不存在触发误报的文件名或内容（如敏感关键词）
 - [ ] 所有强制性业务逻辑已在 Prompt 中透明化说明
+
+**文档完整性**
+
+- [ ] `SECURITY_AUDIT.md` 包含脚本行为矩阵（每个脚本的网络请求、本地文件读取、PII 传输情况）
+- [ ] `SKILL.md` 安全声明中明确说明"仅 X 脚本发起网络请求"
+- [ ] `validate_skill.js` 不检查自身，避免自检误报
 
 **版本管理**
 
@@ -458,6 +579,7 @@ git push
 
 **发布准备**
 
+- [ ] 已创建 `.gitignore` 排除测试文件、日志、node_modules
 - [ ] 代码已提交并推送至 GitHub 远程仓库
 - [ ] `clawhub publish` 命令使用正确的绝对路径
 - [ ] 版本号与 Git tag（如果使用）保持一致
@@ -473,4 +595,42 @@ git push
 
 ---
 
-*最后更新：2026-04-06*
+*最后更新：2026-04-07*
+
+---
+
+## 📝 实战案例：从"可疑"到"通过" (2026-04-07)
+
+### 遇到的问题
+
+健康体检推荐 Skill 发布后收到 OpenClaw "可疑"告警：
+
+1. **声明与实现不一致**：SKILL.md 声称"不读取本地敏感文件"，但 `config/api.js` 检查 `.env` 文件
+2. **Python 脚本遗漏**：`generate_qr.py` 中同样检查 `DEBUG_MODE` 文件
+3. **脚本行为不透明**：扫描器无法确认脚本是否会发送 PII
+4. **validate_skill.js 自检误报**：自带的危险模式检测被静态扫描器标记
+
+### 修复措施
+
+| 问题 | 修复 |
+|------|------|
+| `config/api.js` 检查 `.env` | 移除 `fs.existsSync`，改用 `process.env.NODE_ENV` |
+| `generate_qr.py` 检查 `DEBUG_MODE` | 移除 `os.path.exists`，改用 `os.environ.get('NODE_ENV')` |
+| 脚本行为不透明 | 新增 `SECURITY_AUDIT.md` 脚本行为矩阵 |
+| SKILL.md 声明模糊 | 明确说明"仅 sync_items.js 发起网络请求" |
+| 测试文件暴露 | 创建 `.gitignore` 排除 `*.png`、日志等 |
+
+### 版本迭代
+
+```
+v4.2.1: 移除 .env 检查，统一 NODE_ENV
+v4.2.2: 新增脚本行为矩阵、.gitignore
+v4.2.3: 修复 generate_qr.py 的 DEBUG_MODE 检查
+```
+
+### 关键教训
+
+1. **多语言一致性**：检查 JavaScript 时别忘了 Python、Shell 脚本
+2. **文档即代码**：SECURITY_AUDIT.md 是给扫描器看的"第二层代码"
+3. **环境判断只用环境变量**：`NODE_ENV` 是唯一正确的环境判断方式
+4. **测试文件不进仓库**：`.gitignore` 是安全的基本保障
