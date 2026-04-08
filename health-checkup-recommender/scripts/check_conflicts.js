@@ -3,11 +3,12 @@
  * 父子项去重：选择父项时自动移除其子项
  *
  * 冲突链（HaoLaXX 格式）：
- *   HaoLa01(一般检查) > (基础必选)
- *   HaoLa48(胃泌素G-17) > HaoLa47(胃蛋白酶原测定)
+ *   HaoLa01(一般检查) - 基础必选项
  *   HaoLa66(甲功5项) > HaoLa65(甲功3项B) > HaoLa64(甲功3项)
  *   HaoLa57(血脂4项) > HaoLa122(血脂2项)
- *   HaoLa104(彩超腹部) > 单独器官彩超
+ *   HaoLa67(甲功7项) > HaoLa66/65/64(甲功系列)
+ *
+ * 注意：HaoLa48(胃泌素G-17) 和 HaoLa47(胃蛋白酶原测定) 是不同检测指标，无包含关系
  */
 
 const fs = require('fs');
@@ -23,7 +24,6 @@ try {
 }
 
 const CONFLICT_MAP = {
-  'HaoLa48': ['HaoLa47'],
   'HaoLa66': ['HaoLa65', 'HaoLa64'],
   'HaoLa57': ['HaoLa122'],
   'HaoLa67': ['HaoLa66', 'HaoLa65', 'HaoLa64'],
@@ -76,10 +76,10 @@ function checkConflicts(itemIds) {
   }
 
   const resolved = unique.filter(id => !toRemove.has(id));
-  const total = resolved.reduce((s, id) => {
+  const total = Math.round(resolved.reduce((s, id) => {
     const dbKey = id.charAt(0).toUpperCase() + id.slice(1);
     return s + (ITEMS_DB[dbKey]?.price || 0);
-  }, 0);
+  }, 0) * 100) / 100;
 
   return { resolved, removed, total };
 }
