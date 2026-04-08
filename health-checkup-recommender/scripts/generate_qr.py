@@ -70,4 +70,15 @@ def generate_qr(output_path=None, welfareid=None, ruleid=None):
 
 
 if __name__ == '__main__':
+    # --consent 参数检查
+    args = sys.argv[1:]
+    has_consent = '--consent' in args or '--consent=true' in args
+    
+    if has_consent:
+        args = [arg for arg in args if not arg.startswith('--consent')]
+    
+    if not has_consent and len(args) > 0:
+        print('\n❌ 拒绝执行: 未提供 --consent 参数。在生成预约二维码前，必须征得用户同意。')
+        sys.exit(1)
+    
     generate_qr()

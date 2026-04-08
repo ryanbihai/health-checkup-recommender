@@ -26,93 +26,93 @@
 
   "症状加项映射": {
     "胃部不适": {
-      "addon": ["item016"],
-      "item_names": "胃功能3项",
+      "addon": ["HaoLa47"],
+      "item_names": "胃蛋白酶原测定",
       "note": "替代胃镜，40岁+，消化道症状"
     },
     "腹痛/腹胀": {
-      "addon": ["item016", "item069"],
-      "item_names": "胃功能3项 + 粪便隐血定量",
+      "addon": ["HaoLa47", "HaoLa14"],
+      "item_names": "胃蛋白酶原测定 + 便隐血定性",
       "note": "消化道综合评估"
     },
     "腹泻": {
-      "addon": ["item069"],
-      "item_names": "粪便隐血试验定量",
+      "addon": ["HaoLa14"],
+      "item_names": "便隐血定性",
       "note": "50岁+，长期腹泻需排查"
     },
     "便秘/便血": {
-      "addon": ["item069"],
-      "item_names": "粪便隐血试验定量",
+      "addon": ["HaoLa14"],
+      "item_names": "便隐血定性",
       "note": "50岁+，或便血/便秘"
     },
     "便血": {
-      "addon": ["item069"],
-      "item_names": "粪便隐血试验定量",
+      "addon": ["HaoLa14"],
+      "item_names": "便隐血定性",
       "note": "需排查消化道出血"
     },
     "咳嗽/呼吸困难": {
-      "addon": ["item007", "item067"],
-      "item_names": "胸部CT + 肺功能",
+      "addon": ["HaoLa100", "HaoLa44"],
+      "item_names": "CT检查（胸部）+ 肺功能",
       "note": "呼吸系统综合评估"
     },
     "男性50岁+": {
-      "addon": ["item128", "item007"],
-      "item_names": "前列腺特异抗原 + 胸部CT",
+      "addon": ["HaoLa77", "HaoLa100"],
+      "item_names": "前列腺特异性抗原（TPSA）+ CT检查（胸部）",
       "note": "男性50+高发肿瘤筛查"
     },
     "心脑血管风险": {
-      "addon": ["item042", "item150"],
-      "item_names": "心脏彩超 + 同型半胱氨酸",
+      "addon": ["HaoLa109", "HaoLa70"],
+      "item_names": "彩超（心脏）+ 同型半胱氨酸（HCY）",
       "note": "心脑血管结构与功能评估"
     },
     "高血压": {
-      "addon": ["item150"],
-      "item_names": "同型半胱氨酸",
+      "addon": ["HaoLa70"],
+      "item_names": "同型半胱氨酸（HCY）",
       "note": "H型高血压筛查，心脑血管风险指标"
     },
     "高血糖/糖尿病": {
-      "addon": ["item142"],
-      "item_names": "糖化血红蛋白",
+      "addon": ["HaoLa51"],
+      "item_names": "糖化血红蛋白(HbA1c）",
       "note": "反映近3个月血糖平均水平"
     },
     "脂肪肝/饮酒": {
-      "addon": ["item082", "item150"],
-      "item_names": "肝功能9项 + 同型半胱氨酸",
+      "addon": ["HaoLa19", "HaoLa70"],
+      "item_names": "丙氨酸氨基转氨酶（ALT）+ 同型半胱氨酸（HCY）",
       "note": "肝功能评估，注意此处无专用肝纤维化项目"
     },
     "女性40岁+": {
-      "addon": ["item038", "item039"],
-      "item_names": "乳腺彩超 + 乳腺钼靶",
+      "addon": ["HaoLa108", "HaoLa99"],
+      "item_names": "彩超（乳腺）+ 钼靶（乳腺）",
       "note": "乳腺癌筛查黄金组合"
     },
     "女性": {
-      "addon": ["item014", "item026"],
-      "item_names": "HPV核酸检测 + 宫颈TCT",
+      "addon": ["HaoLa18", "HaoLa17"],
+      "item_names": "HPV基因分型（16/18分型）+ 液基细胞学检查（TCT）",
       "note": "宫颈癌联合筛查"
     },
     "胸闷/心悸": {
-      "addon": ["item042", "item113"],
-      "item_names": "心脏彩超 + 静息心电图",
+      "addon": ["HaoLa109", "HaoLa11"],
+      "item_names": "彩超（心脏）+ 静态心电图（ECG）",
       "note": "心脏结构与电生理评估"
     },
     "乳腺肿块": {
-      "addon": ["item038", "item039"],
-      "item_names": "乳腺彩超 + 乳腺钼靶",
+      "addon": ["HaoLa108", "HaoLa99"],
+      "item_names": "彩超（乳腺）+ 钼靶（乳腺）",
       "note": "乳腺肿块良恶性鉴别"
     },
     "甲状腺异常": {
-      "addon": ["item107"],
-      "item_names": "甲状腺功能5项A",
+      "addon": ["HaoLa66"],
+      "item_names": "甲功5项",
       "note": "甲功全面评估，基础套餐已含甲状腺彩超"
     },
     "头痛/头晕": {
-      "addon": ["item036", "item112"],
-      "item_names": "颈动脉彩超 + 经颅多普勒(TCD)",
+      "addon": ["HaoLa106", "HaoLa68"],
+      "item_names": "彩超（颈动脉）+ 经颅多谱勒(TCD)",
       "note": "脑血管评估，基础套餐已含动脉硬化检测"
     },
     "肺癌筛查": {
-      "addon": ["item007"],
-      "item_names": "胸部CT",
+      "addon": ["HaoLa100"],
+      "item_names": "CT检查（胸部）",
       "note": "低剂量CT替代，50岁+吸烟者首选"
     }
   }
