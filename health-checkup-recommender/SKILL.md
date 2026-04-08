@@ -80,7 +80,6 @@ metadata:
 - **项目清单**：查询 `reference/checkup_items.json`（唯一可信来源）
 - **循证依据**：查询 `reference/evidence_mappings_2025.json`
 - **禁止编造**：只能推荐数据库中存在的项目
-- **跨机构对比与同类寻找（强制）**：推荐方案时，必须同时考虑 `体检机构`字段，如果某项目仅支持单一机构，请主动寻找其他机构同部位、同功能的替代项目（如肝功能11项 vs 肝功能15项），并列出两家机构（如美年、瑞慈）的方案差异及总价进行对比。
 
 ### 重要规则
 
@@ -125,7 +124,15 @@ metadata:
 # 获取对应的加项
 ```
 
-#### 2c. 项目验证（强制）
+#### 2c. 风险解读（必需）
+
+```bash
+# 结合用户信息查询 reference/evidence_mappings_2025.json
+# 从 personal_explanations 中选择匹配的深度解读
+# 输出具备说服力的专业健康咨询建议
+```
+
+#### 2d. 项目验证（强制）
 
 ```bash
 node scripts/verify_items.js [推荐项目...]
@@ -133,7 +140,7 @@ node scripts/verify_items.js [推荐项目...]
 # 检查返回码：0=全部有效 1=有无效项目→修正
 ```
 
-#### 2d. 价格计算（强制）
+#### 2e. 价格计算（强制）
 
 ```bash
 node scripts/calculate_prices.js [推荐项目...]
@@ -141,7 +148,7 @@ node scripts/calculate_prices.js [推荐项目...]
 # 输出：项目明细、自动去重、总价
 ```
 
-#### 2e. 二维码生成（强烈推荐）
+#### 2f. 二维码生成（强烈推荐）
 
 ```bash
 # 优先使用智能降级脚本
