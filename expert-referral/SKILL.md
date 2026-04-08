@@ -1,6 +1,6 @@
 ---
 name: china-top-doctor-referral
-version: 1.2.5
+version: 1.3.0
 description: 面向高端医疗险客户，推荐和预约（北京）协和医院、北大系、阜外医院、安贞医院、中国医学科学院肿瘤医院；（上海）复旦华山/中山/儿科/肿瘤/眼耳鼻喉医院等顶级三甲医院主任/副主任专家。可按科室/疾病/症状匹配顶级专家，并预约其在和睦家、怡德等高端私立医院的门诊。专属客服跟进协助预约。
 homepage: https://www.ihaola.com.cn
 metadata:
