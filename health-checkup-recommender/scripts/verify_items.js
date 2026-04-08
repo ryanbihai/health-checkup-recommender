@@ -8,7 +8,7 @@
  * 3. 核查+去重后的套餐总价
  *
  * 用法:
- *   node verify_items.js Item029 Item035 Item154 Item016
+ *   node verify_items.js HaoLa01 HaoLa105 HaoLa48 HaoLa47
  */
 const { checkConflicts } = require('./check_conflicts.js');
 
@@ -70,10 +70,10 @@ if (require.main === module) {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    console.log('用法: node verify_items.js Item029 Item035 Item154 Item016 Item083 Item071');
+    console.log('用法: node verify_items.js HaoLa01 HaoLa105 HaoLa48 HaoLa47');
     console.log('');
     console.log('--- 演示 ---');
-    const demo = ['Item029', 'Item030', 'Item154', 'Item016', 'Item155', 'Item083', 'Item071', 'Item173', 'Item176', 'Item107', 'Item105'];
+    const demo = ['HaoLa01', 'HaoLa12', 'HaoLa57', 'HaoLa104', 'HaoLa48', 'HaoLa105', 'HaoLa77', 'HaoLa51', 'HaoLa66', 'HaoLa100'];
     console.log('输入:', demo.join(', '));
     const { results, errors } = verifyAll(demo);
     const { resolved, removed, total } = checkConflicts(results.map(r => r.id));

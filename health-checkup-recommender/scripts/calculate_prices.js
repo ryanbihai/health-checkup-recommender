@@ -15,12 +15,18 @@ try {
 
 /**
  * 获取单个项目的价格信息
- * @param {string} itemId - 项目ID（如 'HaoLa01'）
+ * @param {string} itemId - 项目ID（如 'HaoLa01' 或 'haola01'）
  * @returns {{ id, name, price } | null}
  */
 function getPriceInfo(itemId) {
-  const norm = itemId.trim().toLowerCase();
-  const key = norm.startsWith('HaoLa') ? norm : `HaoLa${norm}`;
+  const trimmed = itemId.trim();
+  const lower = trimmed.toLowerCase();
+  let key;
+  if (lower.startsWith('haola')) {
+    key = 'HaoLa' + lower.slice(5);
+  } else {
+    key = 'HaoLa' + lower;
+  }
 
   if (ITEMS_DB[key]) {
     return {
@@ -104,9 +110,9 @@ if (require.main === module) {
 
   if (args.length === 0) {
     console.log('\n📌 用法:');
-    console.log('  node calculate_prices.js Item029 Item131 Item173 Item032');
+    console.log('  node calculate_prices.js HaoLa01 HaoLa12 HaoLa57 HaoLa104');
     console.log('\n💡 演示:');
-    const demo = ['Item029', 'Item131', 'Item173', 'Item032', 'Item154', 'Item035'];
+    const demo = ['HaoLa01', 'HaoLa12', 'HaoLa57', 'HaoLa104', 'HaoLa48', 'HaoLa105'];
     console.log(`  输入: ${demo.join(', ')}\n`);
     console.log(formatOutput(demo));
     process.exit(0);

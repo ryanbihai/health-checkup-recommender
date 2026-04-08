@@ -2,29 +2,12 @@
  * check_conflicts.js - 体检项目冲突检测脚本
  * 父子项去重：选择父项时自动移除其子项
  *
- * 冲突链：
- *   Item030(常规检查2) > Item029(常规检查1)
- *   Item154(胃功能全项) > Item016(胃功能3项), Item155(胃泌素-17)
- *   Item107(甲功5项A) > Item105(甲功3项A)
- *   Item108(甲功5项B) > Item106(甲功3项B)
- *   Item111(甲功7项) > Item105,106,107,108,109
- *   Item020(心肌酶5项) > Item160,161,157,158,159
- *   Item161(心肌酶4项) > Item157,158,159
- *   Item084(肝功能15项) > Item083,082,081,080,079,078,071,074...
- *   Item083(肝功能11项) > Item082,081,080,079,078,071,074...
- *   Item082(肝功能9项) > Item080,079,078,071,074,076,077
- *   Item081(肝功能7项B) > Item080,079,078,071,074,072,073
- *   Item080(肝功能7项) > Item079,078,071,074,072,073
- *   Item079(肝功能6项) > Item071,074,076
- *   Item078(肝功能4项) > Item071,074
- *   Item175(血脂9项) > Item174,172,171,173,176,177,178
- *   Item174(血脂7项) > Item172,173,176,177,178
- *   Item172(血脂5项) > Item173,176,177
- *   Item173(血脂4项) > Item176,177
- *   Item193(TM7男) > Item191(TM5男)
- *   Item194(TM7女) > Item192(TM5女)
- *   Item181(视力+眼底镜) > Item183(眼底镜)
- *   Item182(视力+眼底+裂隙灯) > Item183(眼底镜)
+ * 冲突链（HaoLaXX 格式）：
+ *   HaoLa01(一般检查) > (基础必选)
+ *   HaoLa48(胃泌素G-17) > HaoLa47(胃蛋白酶原测定)
+ *   HaoLa66(甲功5项) > HaoLa65(甲功3项B) > HaoLa64(甲功3项)
+ *   HaoLa57(血脂4项) > HaoLa122(血脂2项)
+ *   HaoLa104(彩超腹部) > 单独器官彩超
  */
 
 const fs = require('fs');
@@ -40,39 +23,34 @@ try {
 }
 
 const CONFLICT_MAP = {
-  'Item030': ['Item029'],
-  'Item154': ['Item016', 'Item155'],
-  'Item107': ['Item105'],
-  'Item108': ['Item106'],
-  'Item111': ['Item105', 'Item106', 'Item107', 'Item108', 'Item109'],
-  'Item020': ['Item160', 'Item161', 'Item157', 'Item158', 'Item159'],
-  'Item161': ['Item157', 'Item158', 'Item159'],
-  'Item084': ['Item083', 'Item082', 'Item081', 'Item080', 'Item079', 'Item078', 'Item071', 'Item074', 'Item072', 'Item073', 'Item075'],
-  'Item083': ['Item082', 'Item081', 'Item080', 'Item079', 'Item078', 'Item071', 'Item074', 'Item072', 'Item073', 'Item075'],
-  'Item082': ['Item080', 'Item079', 'Item078', 'Item071', 'Item074', 'Item076', 'Item077'],
-  'Item081': ['Item080', 'Item079', 'Item078', 'Item071', 'Item074', 'Item072', 'Item073'],
-  'Item080': ['Item079', 'Item078', 'Item071', 'Item074', 'Item072', 'Item073'],
-  'Item079': ['Item071', 'Item074', 'Item076'],
-  'Item078': ['Item071', 'Item074'],
-  'Item175': ['Item174', 'Item172', 'Item171', 'Item173', 'Item176', 'Item177', 'Item178'],
-  'Item174': ['Item172', 'Item173', 'Item176', 'Item177', 'Item178'],
-  'Item172': ['Item173', 'Item176', 'Item177'],
-  'Item173': ['Item176', 'Item177'],
-  'Item193': ['Item191'],
-  'Item194': ['Item192'],
-  'Item181': ['Item183'],
-  'Item182': ['Item183'],
+  'HaoLa48': ['HaoLa47'],
+  'HaoLa66': ['HaoLa65', 'HaoLa64'],
+  'HaoLa57': ['HaoLa122'],
+  'HaoLa67': ['HaoLa66', 'HaoLa65', 'HaoLa64'],
+  'HaoLa84': ['HaoLa83', 'HaoLa82', 'HaoLa81', 'HaoLa80', 'HaoLa79', 'HaoLa78', 'HaoLa77', 'HaoLa71', 'HaoLa74', 'HaoLa72', 'HaoLa73', 'HaoLa75'],
+  'HaoLa83': ['HaoLa82', 'HaoLa81', 'HaoLa80', 'HaoLa79', 'HaoLa78', 'HaoLa77', 'HaoLa71', 'HaoLa74', 'HaoLa72', 'HaoLa73', 'HaoLa75'],
+  'HaoLa82': ['HaoLa80', 'HaoLa79', 'HaoLa78', 'HaoLa77', 'HaoLa71', 'HaoLa74', 'HaoLa76', 'HaoLa77'],
+  'HaoLa81': ['HaoLa80', 'HaoLa79', 'HaoLa78', 'HaoLa77', 'HaoLa71', 'HaoLa74', 'HaoLa72', 'HaoLa73'],
+  'HaoLa80': ['HaoLa79', 'HaoLa78', 'HaoLa77', 'HaoLa71', 'HaoLa74', 'HaoLa72', 'HaoLa73'],
+  'HaoLa79': ['HaoLa71', 'HaoLa74', 'HaoLa76'],
+  'HaoLa78': ['HaoLa71', 'HaoLa74'],
+  'HaoLa56': ['HaoLa55', 'HaoLa54', 'HaoLa53', 'HaoLa52', 'HaoLa51', 'HaoLa50', 'HaoLa49', 'HaoLa48', 'HaoLa47'],
+  'HaoLa55': ['HaoLa54', 'HaoLa53', 'HaoLa52', 'HaoLa51', 'HaoLa50', 'HaoLa49', 'HaoLa48', 'HaoLa47'],
+  'HaoLa54': ['HaoLa53', 'HaoLa52', 'HaoLa51', 'HaoLa50', 'HaoLa49', 'HaoLa48', 'HaoLa47'],
+  'HaoLa53': ['HaoLa51', 'HaoLa50', 'HaoLa49', 'HaoLa48', 'HaoLa47'],
 };
 
-/**
- * 检测并解决冲突
- * 策略：若父项和子项同时存在，保留父项，删除子项
- *
- * @param {string[]} itemIds - 输入的 ItemID 数组
- * @returns {{ resolved: string[], removed: {id,name,reason,supersededBy}[] }}
- */
+function normalizeId(id) {
+  const trimmed = id.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith('haola')) {
+    return 'HaoLa' + lower.slice(5);
+  }
+  return 'HaoLa' + lower;
+}
+
 function checkConflicts(itemIds) {
-  const unique = [...new Set(itemIds.map(id => id.toLowerCase()))];
+  const unique = [...new Set(itemIds.map(normalizeId))];
   const toRemove = new Set();
   const removed = [];
 
@@ -82,13 +60,15 @@ function checkConflicts(itemIds) {
     if (!subsets) continue;
 
     for (const subId of subsets) {
-      const subIdLower = subId.toLowerCase();
+      const subIdLower = normalizeId(subId);
       if (unique.includes(subIdLower) && !toRemove.has(subIdLower)) {
         toRemove.add(subIdLower);
+        const parentName = ITEMS_DB[id.charAt(0).toUpperCase() + id.slice(1)]?.name || id;
+        const childName = ITEMS_DB[subId]?.name || subId;
         removed.push({
           id: subIdLower,
-          name: ITEMS_DB[subId]?.name || subId,
-          reason: `已被 ${id} ${ITEMS_DB[id.charAt(0).toUpperCase() + id.slice(1)]?.name || id} 包含`,
+          name: childName,
+          reason: `已被 ${id} ${parentName} 包含`,
           supersededBy: id,
         });
       }
@@ -96,19 +76,21 @@ function checkConflicts(itemIds) {
   }
 
   const resolved = unique.filter(id => !toRemove.has(id));
-  const total = resolved.reduce((s, id) => s + (ITEMS_DB[id]?.price || 0), 0);
+  const total = resolved.reduce((s, id) => {
+    const dbKey = id.charAt(0).toUpperCase() + id.slice(1);
+    return s + (ITEMS_DB[dbKey]?.price || 0);
+  }, 0);
 
   return { resolved, removed, total };
 }
 
-// CLI
 if (require.main === module) {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    console.log('用法: node check_conflicts.js Item029 Item030 Item154 Item016 Item155');
+    console.log('用法: node check_conflicts.js HaoLa01 HaoLa48 HaoLa47 HaoLa66 HaoLa65 HaoLa64');
     console.log('');
-    const demo = ['Item029', 'Item030', 'Item154', 'Item016', 'Item155', 'Item083', 'Item071', 'Item107', 'Item105'];
+    const demo = ['HaoLa01', 'HaoLa48', 'HaoLa47', 'HaoLa66', 'HaoLa65', 'HaoLa64', 'HaoLa57', 'HaoLa122'];
     console.log('演示:', demo.join(', '));
     const r = checkConflicts(demo);
     if (r.removed.length) {
