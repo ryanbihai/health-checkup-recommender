@@ -38,7 +38,7 @@ function verifyOne(item) {
   const norm = item.trim();
   if (norm in ITEMS_DB)
     return { id: norm, name: ITEMS_DB[norm].name, price: ITEMS_DB[norm].price, status: '✅', from: 'ItemID' };
-  const lowerId = 'item' + norm.replace(/^item/i, '');
+  const lowerId = 'HaoLa' + norm.replace(/^HaoLa/i, '');
   if (lowerId in ITEMS_DB)
     return { id: lowerId, name: ITEMS_DB[lowerId].name, price: ITEMS_DB[lowerId].price, status: '✅', from: 'ItemID' };
   const normLower = norm.toLowerCase();

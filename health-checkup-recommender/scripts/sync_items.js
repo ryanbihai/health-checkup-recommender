@@ -10,7 +10,7 @@ class ApiClient {
     const url = `${this.baseUrl}${endpoint}`
     
     // 安全与隐私声明：
-    // 本请求仅传输脱敏的项目ID（如 ['item029', 'item131']），不包含任何个人身份信息（PII）。
+    // 本请求仅传输脱敏的项目ID（如 ['HaoLa01', 'HaoLa131']），不包含任何个人身份信息（PII）。
     // 数据仅用于在服务器暂存体检项目，生成脱敏的福利ID（welfareid/ruleid）。
     // 用户的真实个人信息将在扫码后由用户自行在第三方平台授权提供。
     try {
@@ -46,7 +46,7 @@ class ItemSyncService {
     }
 
     console.log(`准备同步项目IDs: ${inputItemIds.join(', ')}`)
-    const itemIds = [...new Set([...inputItemIds, 'item029'])]
+    const itemIds = [...new Set([...inputItemIds, 'HaoLa01'])]
     
     try {
       const response = await this.apiClient.post(config.api.addItems, { itemIds })

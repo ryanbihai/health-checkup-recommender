@@ -54,8 +54,8 @@ metadata:
 2. **不自动发送二维码**：必须询问用户同意后才能发送
 3. **数据脱敏与传输限制**：
    - **仅一个脚本发起网络请求**：`scripts/sync_items.js`（项目同步）
-   - **传输内容**：`{ itemIds: ["item029", "item131"] }` — 仅脱敏的体检项目 ID
-   - **绝不传输**：姓名、手机号、身份证号或任何 PII
+   - **传输内容**：`{ itemIds: ["HaoLa01", "HaoLa131"] }` — 仅脱敏的体检项目 ID
+   - **绝不传输**：姓名、手机号、身份证号或任何 PII 数据
    - **二维码内容**：仅含 `welfareid`/`ruleid` 两个脱敏预约码，无任何个人信息
    - 详细说明见 `SECURITY_AUDIT.md`
 4. **脚本行为一览**：verify_items.js、calculate_prices.js、check_conflicts.js 为纯本地处理，generate_qr.js 仅生成本地图片
@@ -86,7 +86,7 @@ metadata:
 | 规则 | 说明 |
 |------|------|
 | **600元 最低消费** | 由于合作体检机构不接低于 600 元的订单，不足时需向用户说明原因并补充推荐项目 |
-| **item029 必选** | 体检基线数据（身高/体重/血压等），每个套餐必须包含 |
+| **HaoLa01 必选** | 体检基线数据（身高/体重/血压等），每个套餐必须包含 |
 | **价格必须来自代码** | 禁止 LLM 手动计算总价 |
 
 ---
@@ -233,10 +233,10 @@ health-checkup-recommender/
 
 ```bash
 # 价格计算（强制）
-node scripts/calculate_prices.js item131 item173
+node scripts/calculate_prices.js HaoLa131 HaoLa173
 
 # 项目验证（强制）
-node scripts/verify_items.js item131 item173
+node scripts/verify_items.js HaoLa131 HaoLa173
 
 # 智能二维码（推荐）
 node scripts/generate_qr.js --consent=true output.png

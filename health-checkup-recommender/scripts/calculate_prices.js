@@ -1,18 +1,3 @@
-#!/usr/bin/env node
-/**
- * 价格计算器 - 计算体检套餐总价
- *
- * 设计原则：价格计算必须由代码完成，禁止 LLM 手动计算！
- *
- * 用法:
- *   node calculate_prices.js Item029 Item131 Item173
- *
- * 或在代码中调用:
- *   const { calculateTotal, getPriceInfo } = require('./calculate_prices.js');
- *   const result = calculateTotal(['item029', 'item131', 'item173']);
- *   console.log(result.total); // 输出总价
- */
-
 const fs = require('fs');
 const path = require('path');
 const { checkConflicts } = require('./check_conflicts.js');
@@ -30,12 +15,12 @@ try {
 
 /**
  * 获取单个项目的价格信息
- * @param {string} itemId - 项目ID（如 'item029' 或 'Item029'）
+ * @param {string} itemId - 项目ID（如 'HaoLa01'）
  * @returns {{ id, name, price } | null}
  */
 function getPriceInfo(itemId) {
   const norm = itemId.trim().toLowerCase();
-  const key = norm.startsWith('item') ? norm : `item${norm}`;
+  const key = norm.startsWith('HaoLa') ? norm : `HaoLa${norm}`;
 
   if (ITEMS_DB[key]) {
     return {

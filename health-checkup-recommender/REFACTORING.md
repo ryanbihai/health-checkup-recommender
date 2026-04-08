@@ -36,9 +36,9 @@
 原 SKILL.md 第 184-243 行包含了手动列举的项目清单：
 
 ```markdown
-- item001 CT检查（腹部） ¥272
-- item002 颈部CT ¥272
-- item131 血常规 ¥30
+- HaoLa001 CT检查（腹部） ¥272
+- HaoLa002 颈部CT ¥272
+- HaoLa131 血常规 ¥30
 ...（约60个项目的列举）
 ```
 
@@ -175,12 +175,12 @@
 
 ```markdown
 # 之前（数据不一致风险）
-SKILL.md: item029 ¥17
-checkup_items.json: item029 ¥17
+SKILL.md: HaoLa029 ¥17
+checkup_items.json: HaoLa029 ¥17
 # 手动同步，容易出错！
 
 # 现在（单一数据源）
-checkup_items.json: item029 ¥17  ← 唯一可信来源
+checkup_items.json: HaoLa029 ¥17  ← 唯一可信来源
 SKILL.md: 参考 reference/checkup_items.json
 ```
 

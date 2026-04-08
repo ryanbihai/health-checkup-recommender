@@ -49,7 +49,7 @@ Content-Type: application/json
 **请求Payload（唯一传输内容）**：
 ```json
 {
-  "itemIds": ["item029", "item131", "item173"]
+  "itemIds": ["HaoLa01", "HaoLa131", "HaoLa173"]
 }
 ```
 
@@ -96,7 +96,7 @@ https://www.ihaola.com.cn/launch/haola/pe?urlsrc=brief&welfareid=wxxxxx&ruleid=r
 
 ```bash
 # 同步项目（需要同意）
-node scripts/sync_items.js --consent=true item029 item131
+node scripts/sync_items.js --consent=true HaoLa01 HaoLa131
 
 # 生成二维码（需要同意）
 node scripts/generate_qr.js --consent=true output.png w123 r456
