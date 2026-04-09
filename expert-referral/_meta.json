@@ -31,8 +31,7 @@
   },
   "permissions": {
     "network": [
-      "https://*.ihaola.com.cn",
-      "http://*.ihaola.com.cn"
+      "https://*.ihaola.com.cn"
     ]
   },
   "privacy": {
