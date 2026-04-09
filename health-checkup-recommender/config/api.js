@@ -10,7 +10,11 @@ const envMap = {
 }
 
 const getEnv = () => {
-  if (process.env.NODE_ENV === 'development') {
+  const nodeEnv = process.env.NODE_ENV
+  if (nodeEnv === 'production') {
+    return 'prod'
+  }
+  if (nodeEnv === 'development') {
     return 'dev'
   }
   return 'prod'
