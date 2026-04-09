@@ -88,7 +88,7 @@ if (require.main === module) {
     }
 
     console.log(`\n✅ 有效: ${results.length}  ❌ 无效: ${errors.length}  🔸 冲突移除: ${removed.length}`);
-    console.log(`💰 套餐总价: ¥${total}（仅供参考，以医院实际收费为准）`);
+    console.log(`💰 去重后 ${resolved.length} 项总价: ¥${total}`);
     console.log('\n去重后项目:', resolved.join(', '));
     process.exit(errors.length > 0 ? 1 : 0);
     return;
@@ -114,7 +114,7 @@ if (require.main === module) {
   }
 
   console.log(`\n✅ 有效: ${results.length}  ❌ 无效: ${errors.length}  🔸 冲突移除: ${removed.length}`);
-  if (results.length) console.log(`💰 套餐总价: ¥${total}（仅供参考，以医院实际收费为准）`);
+  if (results.length) console.log(`💰 去重后 ${resolved.length} 项总价: ¥${total}（仅供参考，以医院实际收费为准）`);
 
   if (errors.length > 0) {
     console.log('\n⚠️ 有无效项目，请修正后重新核查');
