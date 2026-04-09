@@ -107,25 +107,20 @@ if (require.main === module) {
   const args = process.argv.slice(2)
   
   // --consent 参数检查（必须）
-  const consentIndex = args.findIndex(
-    arg => arg === '--consent=true' || arg === '--consent'
-  )
+  const consentIndex = args.findIndex(arg => arg === '--consent=true' || arg === '--consent')
   const hasConsent = consentIndex !== -1
+  if (!hasConsent) {
+    console.error('❌ 拒绝执行: 必须提供 --consent=true 参数')
+    process.exit(1)
+  }
 
   if (consentIndex !== -1) {
     args.splice(consentIndex, 1)
   }
 
-  if (args.length === 0 || !hasConsent) {
-    if (!hasConsent && args.length > 0) {
-      console.error('\n❌ 拒绝执行: 未提供 --consent=true 参数。')
-      console.error('   在生成预约二维码前，必须征得用户同意。')
-      process.exit(1)
-    }
+  if (args.length === 0) {
     console.log('用法: node generate_qr.js --consent=true [output_path] [welfareid] [ruleid]')
-    console.log('示例: node generate_qr.js --consent=true output.png w123 r456')
-    console.log('')
-    console.log('--- 演示模式 ---')
+
     generateQR(path.join(__dirname, '..', '体检预约_demo.png'), {
       welfareid: 'demo_w',
       ruleid: 'demo_r'

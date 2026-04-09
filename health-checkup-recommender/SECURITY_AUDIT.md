@@ -210,8 +210,7 @@ node scripts/generate_qr.js --consent=true output.png w123 r456
 // _meta.json
 {
   "dependencies": {
-    "npm": ["qrcode"],
-    "python": ["qrcode"]
+    "npm": ["qrcode"]
   },
   "install": "npm install"
 }

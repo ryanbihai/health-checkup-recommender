@@ -8,9 +8,9 @@
   "homepage": "https://www.ihaola.com.cn",
   "dependencies": {
     "npm": ["qrcode"],
-    "python": ["qrcode"]
+    "node": [">=18.0.0"]
   },
-  "install": "npm install",
+  "install": "npm ci",
   "permissions": {
     "network": ["https://*.ihaola.com.cn", "http://*.ihaola.com.cn"],
     "filesystem": ["write"]
@@ -52,7 +52,7 @@
     "config_paths_read": [],
     "runtime_deps": [
       "npm:qrcode",
-      "python:qrcode"
+      "node:>=18.0.0"
     ]
   }
 }
