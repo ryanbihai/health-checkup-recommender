@@ -73,7 +73,8 @@ metadata:
 4. **项目验证（强制）**：调用 `node scripts/verify_items.js [推荐项目]`
 5. **价格计算（强制）**：调用 `node scripts/calculate_prices.js [推荐项目]`
 6. **输出推荐**：使用 `PROMPTS.md` 中的话术模板输出
-7. **二维码生成（强烈推荐）**：`node scripts/generate_qr.js --consent=true output.png [项目...]`
+7. **获取套餐脱敏welfareid和ruleid**：调用 `node scripts/sync_items.js [推荐项目]`
+8. **二维码生成（强烈推荐）**：`node scripts/generate_qr.js --consent=true output.png [welfareid] [ruleid]`
 
 ### 数据查询原则
 
@@ -148,11 +149,19 @@ node scripts/calculate_prices.js [推荐项目...]
 # 输出：项目明细、自动去重、总价
 ```
 
-#### 2f. 二维码生成（强烈推荐）
+#### 2f. 获取套餐脱敏welfareid和ruleid（强制）
+
+```bash
+node scripts/sync_items.js [推荐项目...]
+
+# 输出：welfareid、ruleid 两个脱敏预约码
+```
+
+#### 2g. 二维码生成（强烈推荐）
 
 ```bash
 # 优先使用智能降级脚本
-node scripts/generate_qr.js --consent=true output.png [项目...]
+node scripts/generate_qr.js --consent=true output.png [welfareid] [ruleid]
 
 # 特点：接口失败时自动降级为默认二维码
 # 确保100%成功率
@@ -206,7 +215,6 @@ health-checkup-recommender/
     sync_items.js             # 唯一网络请求脚本
     check_conflicts.js        # 冲突检测
     generate_qr.js           # 本地二维码生成
-    generate_qr.py           # Python 二维码
     validate_skill.js          # 安全验证脚本
   config/
     api.js                   # API 端点配置

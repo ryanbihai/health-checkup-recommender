@@ -20,17 +20,6 @@ await generateQR('/path/to/output.png', { welfareid: 'xxx', ruleid: 'xxx' })
 node scripts/generate_qr.js [output_path] [welfareid] [ruleid]
 ```
 
-### Python（需要 pip install qrcode）
-
-```python
-import qrcode
-url = 'https://www.ihaola.com.cn/launch/haola/pe?urlsrc=brief&welfareid=xxx&ruleid=xxx'
-img = qrcode.make(url)
-img.save('体检预约二维码.png')
-```
-
----
-
 ## 使用说明
 
 1. 推荐完体检项目后，告知用户可以扫码预约
