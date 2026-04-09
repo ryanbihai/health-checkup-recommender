@@ -54,7 +54,7 @@ metadata:
 2. **不自动发送二维码**：必须询问用户同意后才能发送
 3. **数据脱敏与传输限制**：
    - **仅一个脚本发起网络请求**：`scripts/sync_items.js`（项目同步）
-   - **传输内容**：`{ itemIds: ["HaoLa01", "HaoLa131"] }` — 仅脱敏的体检项目 ID
+   - **传输内容**：`{ itemIds: ["HaoLa01", "HaoLa12", "HaoLa57"] }` — 仅脱敏的体检项目 ID
    - **绝不传输**：姓名、手机号、身份证号或任何 PII 数据
    - **二维码内容**：仅含 `welfareid`/`ruleid` 两个脱敏预约码，无任何个人信息
    - 详细说明见 `SECURITY_AUDIT.md`
@@ -193,7 +193,7 @@ health-checkup-recommender/
   PROMPTS.md                  # 话术与输出模板
   _meta.json                  # 版本信息
   README.md                   # 项目说明
-  FALLBACK_MECHANISM.md       # 降级机制说明
+  SECURITY_AUDIT.md          # 安全审核与隐私说明
   reference/
     checkup_items.json        # 唯一可信来源
     symptom_mapping.json
@@ -203,11 +203,13 @@ health-checkup-recommender/
   scripts/
     verify_items.js            # 项目验证（强制）
     calculate_prices.js       # 价格计算（强制）
-    sync_items.js              # 项目同步
+    sync_items.js             # 唯一网络请求脚本
     check_conflicts.js        # 冲突检测
-    generate_qr.js            # 基础二维码
-    generate_qr.py            # Python 二维码
-    validate_skill.js         # 安全验证脚本
+    generate_qr.js           # 本地二维码生成
+    generate_qr.py           # Python 二维码
+    validate_skill.js          # 安全验证脚本
+  config/
+    api.js                   # API 端点配置
 ```
 
 ---
@@ -233,10 +235,10 @@ health-checkup-recommender/
 
 ```bash
 # 价格计算（强制）
-node scripts/calculate_prices.js HaoLa131 HaoLa173
+node scripts/calculate_prices.js HaoLa12 HaoLa57
 
 # 项目验证（强制）
-node scripts/verify_items.js HaoLa131 HaoLa173
+node scripts/verify_items.js HaoLa12 HaoLa57
 
 # 智能二维码（推荐）
 node scripts/generate_qr.js --consent=true output.png
