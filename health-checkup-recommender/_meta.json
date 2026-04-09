@@ -15,7 +15,7 @@
     "network": ["https://*.ihaola.com.cn", "http://*.ihaola.com.cn"],
     "filesystem": ["write"]
   },
-  "changelog": "v4.4.0: Bug 修复\nv4.3.7: 修复 SKILL.md 声明不一致（移除不存在的 FALLBACK_MECHANISM.md，更新示例格式）\nv4.3.6: 修复环境判断逻辑，确保默认使用生产环境（www.ihaola.com.cn）\nv4.3.5: 修复 HaoLa47/48 冲突检测错误",
+  "changelog": "v4.5.0: 安全合规升级，清理遗留 Python 依赖并锁定 npm ci 安装；SKILL.md 补充网络透明度声明；sync_items.js 和 generate_qr.js 强制要求 --consent=true 授权拦截\nv4.4.0: Bug 修复\nv4.3.7: 修复 SKILL.md 声明不一致（移除不存在的 FALLBACK_MECHANISM.md，更新示例格式）\nv4.3.6: 修复环境判断逻辑，确保默认使用生产环境（www.ihaola.com.cn）\nv4.3.5: 修复 HaoLa47/48 冲突检测错误",
   "tags": [
     "健康体检",
     "体检推荐",
