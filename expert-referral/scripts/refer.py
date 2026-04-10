@@ -95,6 +95,117 @@ class StateManager:
                 json.dump(preserved, f, ensure_ascii=False, indent=2)
 
 # ─────────────────────────────────────────────
+# 症状→科室智能映射表
+# ─────────────────────────────────────────────
+
+SYMPTOM_DEPT_MAP = {
+    "头晕": ["神经", "神经外科", "内科", "全科"],
+    "眩晕": ["神经", "神经外科", "耳鼻喉", "耳鼻喉科"],
+    "视物模糊": ["眼科", "神经", "神经外科"],
+    "视物不清": ["眼科", "神经", "神经外科"],
+    "对焦不准": ["眼科", "神经", "神经外科"],
+    "看东西模糊": ["眼科", "神经"],
+    "脑供血不足": ["神经", "神经外科", "心内科"],
+    "脑血管": ["神经外科", "神经"],
+    "脑中风": ["神经外科", "神经", "心内科"],
+    "脑梗": ["神经外科", "神经", "心内科"],
+    "脑出血": ["神经外科"],
+    "帕金森": ["神经", "神经外科"],
+    "癫痫": ["神经", "神经外科"],
+    "血糖高": ["内分泌", "内分泌科"],
+    "血糖": ["内分泌", "内分泌科"],
+    "糖尿病": ["内分泌", "内分泌科"],
+    "甲亢": ["内分泌", "内分泌科"],
+    "甲状腺": ["内分泌", "内分泌科", "普外科", "乳腺甲状腺"],
+    "高血压": ["心内科", "心内", "内科"],
+    "心脏病": ["心内科", "心内"],
+    "冠心病": ["心内科", "心内"],
+    "心律失常": ["心内科", "心内"],
+    "骨科": ["骨科", "骨外伤", "Orthopedics"],
+    "骨折": ["骨科", "骨外伤", "Orthopedics", "骨关节"],
+    "关节": ["骨科", "运动医学", "Orthopedics"],
+    "腰椎": ["骨科", "Orthopedics", "脊柱"],
+    "颈椎": ["骨科", "Orthopedics", "脊柱"],
+    "运动损伤": ["运动医学", "骨科"],
+    "手外科": ["手外科"],
+    "断指": ["手外科"],
+    "足踝": ["Orthopedics", "骨科"],
+    "拇外翻": ["骨科", "Orthopedics", "足踝"],
+    "拇囊炎": ["骨科", "Orthopedics", "足踝"],
+    "泌尿": ["泌尿", "泌尿科", "泌尿外科"],
+    "肾结石": ["泌尿", "泌尿科", "肾内科"],
+    "前列腺": ["泌尿", "泌尿科", "泌尿外科"],
+    "妇产科": ["妇产科", "妇科", "妇科肿瘤"],
+    "妇科": ["妇科", "妇产科"],
+    "产科": ["妇产科"],
+    "月经": ["妇科", "妇产科"],
+    "子宫": ["妇科", "妇产科"],
+    "乳腺": ["乳腺", "乳腺外科", "Surgery"],
+    "乳腺癌": ["乳腺", "乳腺外科", "肿瘤"],
+    "甲状腺癌": ["甲状腺", "乳腺甲状腺", "肿瘤"],
+    "肿瘤": ["肿瘤", "肿瘤科", "肿瘤内科"],
+    "癌症": ["肿瘤", "肿瘤科", "肿瘤内科"],
+    "消化": ["消化", "消化科", "消化内科", "胃肠"],
+    "胃": ["消化", "消化科", "胃肠"],
+    "肠": ["消化", "消化科", "胃肠"],
+    "肝胆": ["肝胆", "肝胆外科", "肝外"],
+    "肝脏": ["肝胆", "肝胆外科", "肝病"],
+    "胆囊": ["肝胆", "肝胆外科"],
+    "胰腺": ["胰腺", "胰外科", "肝胆"],
+    "疝气": ["疝", "疝外科", "普外"],
+    "肥胖": ["肥胖", "减重", "内分泌"],
+    "减肥": ["肥胖", "减重", "内分泌"],
+    "整形": ["整形", "美容", "颌面"],
+    "唇腭裂": ["唇腭裂", "颌面", "口腔"],
+    "血管": ["血管", "血管外科"],
+    "静脉曲张": ["血管", "血管外科"],
+    "血液": ["血液", "血液科"],
+    "贫血": ["血液", "血液科"],
+    "白血病": ["血液", "血液科"],
+    "儿科": ["儿科", "儿", "Peds"],
+    "儿童": ["儿科", "儿", "Peds"],
+    "小儿": ["儿科", "儿", "Peds"],
+    "新生儿": ["NICU", "儿科"],
+    "呼吸": ["呼吸", "呼吸科"],
+    "肺": ["呼吸", "呼吸科", "胸外科"],
+    "肺癌": ["胸外科", "呼吸"],
+    "胸外科": ["胸外科", "Thoracic"],
+    "肺癌": ["胸外科"],
+    "纵隔": ["胸外科"],
+    "眼科": ["眼科"],
+    "白内障": ["眼科", "白内障"],
+    "青光眼": ["眼科"],
+    "斜视": ["眼科", "斜视"],
+    "近视": ["眼科"],
+    "激光手术": ["眼科"],
+    "ICL": ["ICL", "眼科"],
+    "耳鼻喉": ["耳鼻喉", "耳鼻喉科"],
+    "鼻炎": ["耳鼻喉", "耳鼻喉科"],
+    "鼻窦炎": ["耳鼻喉", "耳鼻喉科"],
+    "喉": ["耳鼻喉", "耳鼻喉科"],
+    "听力": ["耳鼻喉", "耳鼻喉科"],
+    "皮肤": ["皮肤", "皮肤科"],
+    "性病": ["皮肤", "皮肤科"],
+}
+
+DEPT_ALIASES = {
+    "神经": ["神经外科", "神经内科", "神经科"],
+    "神经外科": ["神经", "神经内科"],
+    "心内科": ["心内", "心脏", "心血管"],
+    "内分泌": ["内分泌科"],
+    "消化": ["消化科", "消化内科"],
+    "骨科": ["骨", "骨外科", "骨外伤"],
+    "泌尿": ["泌尿科", "泌尿外科"],
+    "眼科": ["眼"],
+    "耳鼻喉": ["五官科", "耳鼻喉科"],
+    "肿瘤": ["肿瘤科", "肿瘤内科", "肿瘤外科"],
+    "妇科": ["妇产科", "妇科肿瘤"],
+    "儿科": ["儿", "Peds", "小儿"],
+    "普外科": ["普外", "外科"],
+    "肝胆外科": ["肝胆", "肝外"],
+}
+
+# ─────────────────────────────────────────────
 # 专家推荐逻辑 (ExpertService)
 # ─────────────────────────────────────────────
 
@@ -106,38 +217,99 @@ class ExpertService:
             return json.load(f)
 
     @classmethod
-    def search(cls, query):
+    def search(cls, query, city=None):
         if not query:
-            return "请输入您想搜索的科室或疾病。"
+            return "请输入您想搜索的科室、疾病或症状。"
 
         data = cls._load_data()
         experts = data["experts"]
         keywords = data.get("big3_keywords", [])
 
+        if city:
+            experts = [e for e in experts if e.get("city") == city]
+            if not experts:
+                experts = data["experts"]
+
+        search_keywords = cls._expand_query(query)
+
         scored = []
-        q = query.lower()
         for e in experts:
             score = 0
-            if e.get("dept") and q in e["dept"].lower():
-                score += 10
-            if e.get("name") and q in e["name"].lower():
-                score += 8
-            if e.get("skill") and q in e["skill"].lower():
-                score += 5
+            matched_reason = []
+
+            for kw in search_keywords:
+                if e.get("dept") and kw in e["dept"].lower():
+                    score += 10
+                    matched_reason.append(f"科室:{kw}")
+                if e.get("name") and kw in e["name"].lower():
+                    score += 8
+                    matched_reason.append(f"姓名:{kw}")
+                if e.get("skill") and kw in e["skill"].lower():
+                    score += 5
+                    matched_reason.append(f"擅长:{kw[:10]}")
+                if e.get("main_hospital") and kw in e["main_hospital"].lower():
+                    score += 3
+                    matched_reason.append(f"医院:{kw}")
+
             if score > 0:
-                scored.append((score, e))
+                scored.append((score, e, matched_reason))
 
         scored.sort(key=lambda x: -x[0])
-        top = [e for _, e in scored[:24]]
+        top = [(score, e, reason) for score, e, reason in scored[:30]]
 
-        primary = [e for e in top if not any(k in (e.get("main_hospital") or "") for k in keywords)]
-        secondary = [e for e in top if e not in primary]
+        primary = [e for score, e, _ in top if not any(k in (e.get("main_hospital") or "") for k in keywords)]
+        secondary = [e for score, e, _ in top if e not in primary]
 
-        return cls._render_response(primary[:8], secondary[:5])
+        matched_keywords = ", ".join(search_keywords[:5])
+        hint = cls._generate_hint(query, search_keywords)
+
+        return cls._render_response(primary[:8], secondary[:5], hint=hint)
+
+    @classmethod
+    def _expand_query(cls, query):
+        q = query.lower().strip()
+        result = [q]
+
+        if q in SYMPTOM_DEPT_MAP:
+            result.extend(SYMPTOM_DEPT_MAP[q])
+
+        for symptom, depts in SYMPTOM_DEPT_MAP.items():
+            if symptom in q or q in symptom:
+                result.extend(depts)
+                break
+
+        for alias, variants in DEPT_ALIASES.items():
+            if q in alias.lower() or any(q in v.lower() for v in variants):
+                result.append(alias)
+                result.extend(variants)
+                break
+
+        return list(dict.fromkeys(result))
 
     @staticmethod
-    def _render_response(primary, secondary):
+    def _generate_hint(query, expanded_keywords):
+        if len(expanded_keywords) > 1:
+            return f"（根据「{query}」扩展搜索：{', '.join(expanded_keywords[1:5])}...）"
+        return ""
+
+    @staticmethod
+    def _render_response(primary, secondary, hint=""):
         lines = []
+
+        if hint:
+            lines.append(f"💡 {hint}\n")
+
+        if not primary and not secondary:
+            lines.append("⚠️ **未找到匹配的专家**\n")
+            lines.append("可能原因：")
+            lines.append("1. 数据库中暂无该科室专家")
+            lines.append("2. 建议联系客服帮您预约特定专家")
+            lines.append("\n---\n📞 **联系我们预约专家**")
+            lines.append("1️⃣ 电话热线:**400-109-2838**")
+            lines.append("2️⃣ 微信公众号:**好啦**")
+            lines.append("3️⃣ 直接帮您联系客服:回复「联系客服」+ 您的需求")
+            return "\n".join(lines)
+
         if primary:
             lines.append("✅ **可直接预约的专家**\n")
             for e in primary:
