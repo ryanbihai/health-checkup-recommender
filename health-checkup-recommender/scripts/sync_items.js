@@ -7,7 +7,7 @@
  * ═══════════════════════════════════════════════════════════════
  * 
  * 【唯一网络请求】
- * 本脚本是技能中唯一发起网络请求的脚本（SKILL.md 第56行声明）。
+ * 本脚本是技能中唯一发起网络请求的脚本。
  * 
  * 【传输数据】
  * 仅发送以下字段：
@@ -69,6 +69,7 @@ class ApiClient {
     }
     
     try {
+      // 安全与隐私声明：本请求仅传输脱敏的项目ID，不包含任何个人身份信息（PII）
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -138,21 +139,18 @@ if (require.main === module) {
   const args = process.argv.slice(2)
   
   // --consent 参数检查（必须）
-  const consentIndex = args.findIndex(
-    arg => arg === '--consent=true' || arg === '--consent'
-  )
+  const consentIndex = args.findIndex(arg => arg === '--consent=true' || arg === '--consent')
   const hasConsent = consentIndex !== -1
+  if (!hasConsent) {
+    console.error('❌ 拒绝执行: 必须提供 --consent=true 参数')
+    process.exit(1)
+  }
 
   if (consentIndex !== -1) {
     args.splice(consentIndex, 1)
   }
 
-  if (args.length === 0 || !hasConsent) {
-    if (!hasConsent && args.length > 0) {
-      console.error('\n❌ 拒绝执行: 未提供 --consent=true 参数。')
-      console.error('   在同步体检项目前，必须征得用户同意。')
-      process.exit(1)
-    }
+  if (args.length === 0) {
     console.log('\n📌 用法: node sync_items.js --consent=true HaoLa01 HaoLa12 HaoLa57 ...')
     return
   }

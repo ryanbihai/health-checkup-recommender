@@ -25,7 +25,9 @@ metadata:
   requires:
     runtime_deps:
       - npm: qrcode
-      - python: qrcode
+      - node: '>=18.0.0'
+    install:
+      - npm ci
   privacy:
     third_party_booking: true
     third_party_domain:
@@ -58,8 +60,36 @@ metadata:
    - **绝不传输**：姓名、手机号、身份证号或任何 PII 数据
    - **二维码内容**：仅含 `welfareid`/`ruleid` 两个脱敏预约码，无任何个人信息
    - 详细说明见 `SECURITY_AUDIT.md`
+
+### 网络请求透明度声明 (sync_items.js)
+
+为便于安全审计，在此完整公开本技能唯一网络请求（`scripts/sync_items.js`）的实现细节。本技能**绝不**读取任何本地敏感文件（如 `.env`），也**绝不**在请求体或 Header 中夹带任何个人身份信息（PII）。
+
+**HTTP 请求示例：**
+```http
+POST https://pe.ihaola.com.cn/skill/api/recommend/addpack
+Content-Type: application/json
+
+{
+  "itemIds": ["HaoLa01", "HaoLa12", "HaoLa57"]
+}
+```
+*说明：请求体仅包含脱敏的体检项目内部编号数组，无任何用户标识、会话 Token 或自由文本。*
+
+**HTTP 响应示例：**
+```json
+{
+  "code": 0,
+  "data": {
+    "welfareid": "c99a14f6e0",
+    "ruleid": "a0828f3e01"
+  }
+}
+```
+*说明：服务器仅返回脱敏的业务关联 ID，用于后续生成本地二维码。二维码同样不含 PII，用户扫码后需在官网自行填写信息。*
+
 4. **脚本行为一览**：verify_items.js、calculate_prices.js、check_conflicts.js 为纯本地处理，generate_qr.js 仅生成本地图片
-5. **运行时依赖**：需在环境中执行 `npm install`（已在 `_meta.json` 声明）
+5. **运行时依赖**：需在环境中执行 `npm ci`（已在 `_meta.json` 和 metadata 的 `install` 中声明，使用 `npm ci` 基于 `package-lock.json` 安装确保依赖树的一致性和安全性）
 
 ---
 
@@ -149,7 +179,7 @@ node scripts/calculate_prices.js [推荐项目...]
 # 输出：项目明细、自动去重、总价
 ```
 
-#### 2f. 获取套餐脱敏welfareid和ruleid（强制）
+#### 2f. 获取套餐脱敏welfareid和ruleid（生成二维码的前置条件，不可缺！）
 
 ```bash
 node scripts/sync_items.js [推荐项目...]
