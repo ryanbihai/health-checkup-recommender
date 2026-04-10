@@ -1,11 +1,11 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "china-top-doctor-referral",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "面向高端医疗险客户，推荐和预约顶级三甲医院专家。可按科室/疾病匹配专家并预约高端私立门诊。专属客服跟进协助预约。",
   "publishedAt": 1775268000000,
   "namespace": "ryanbihai",
-  "changelog": "v1.4.5: 彻底重构安全合规机制，完全禁止 Agent 修改全局配置或自动创建定时任务，所有敏感配置均由用户手动在终端执行确认，完全消除未声明的越权风险",
+  "changelog": "v1.4.6: 新增专属客服微信二维码联系方式",
   "tags": [
     "专家推荐",
     "医生推荐",

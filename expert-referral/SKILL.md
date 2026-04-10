@@ -1,6 +1,6 @@
 ---
 name: china-top-doctor-referral
-version: 1.4.5
+version: 1.4.6
 description: 面向高端医疗险客户，推荐和预约顶级三甲医院专家。可按科室/疾病匹配专家并预约高端私立门诊。专属客服跟进协助预约。
 homepage: https://www.ihaola.com.cn
 metadata:
