@@ -1,6 +1,6 @@
 ---
 name: china-top-doctor-referral
-version: 1.4.0
+version: 1.4.3
 description: 面向高端医疗险客户，推荐和预约（北京）协和医院、北大系、阜外医院、安贞医院、中国医学科学院肿瘤医院；（上海）复旦华山/中山/儿科/肿瘤/眼耳鼻喉医院等顶级三甲医院主任/副主任专家。可按科室/疾病/症状匹配顶级专家，并预约其在和睦家、怡德等高端私立医院的门诊。专属客服跟进协助预约。
 homepage: https://www.ihaola.com.cn
 metadata:
@@ -8,6 +8,7 @@ metadata:
   api_base: https://pe-t.ihaola.com.cn
   capabilities:
     - api
+    - cron
     - heartbeat
   requires:
     config_paths:
@@ -56,7 +57,9 @@ metadata:
 ## 触发词与系统事件
 
 - **用户对话触发**：专家推荐, 预约专家, 挂号, 看哪个医生, 找哪个专家, 推荐医生, 想看, 要挂号, 主任, 副主任, 三甲医生, 联系客服, 客服
-- **系统事件触发**：当接收到 `type: heartbeat` 的后台静默系统事件时，你必须根据用户全局工作区中配置的轮询指令，主动执行检查任务。
+- **系统事件触发**：为接收客服回复，本系统提供两种触发机制，用户可任选其一：
+  1. **独立定时任务 (Cron)**：为每次咨询动态创建 `isolated cron` 任务，获取回复后推送。
+  2. **全局心跳轮询 (Heartbeat)**：当接收到 `type: heartbeat` 的系统事件时，根据配置主动执行检查任务。
 
 ---
 
@@ -102,11 +105,12 @@ metadata:
            ↓
       refer.py notify_cs --user_id "真实用户ID" --message "用户的消息" --channel "feishu" --consent=true
            ↓
-      消息持久化到 pending_ctx.json
+      引导用户选择通知方式 (Isolated Cron 或 全局 Heartbeat)
            ↓
-      heartbeat 定期调用 refer.py poll_reply（需 Agent 引导用户检查或配置 HEARTBEAT.md）
+      方案A: Cron 独立进程定期调用 refer.py poll_reply --user_id "真实用户ID"
+      方案B: 依赖全局心跳定期调用 refer.py poll_reply (配合 HEARTBEAT.md)
            ↓
-      外部 API 返回客服回复 → 推送用户
+      获取到客服回复后 → 推送给用户 (Cron模式使用 openclaw message，Heartbeat模式直接推送)
 ```
 
 ### ⚠️ 关键：user_id 必须从上下文提取
@@ -155,19 +159,36 @@ python3 refer.py notify_cs \
 
 只有在用户明确回复“同意”后，才能继续下一步。
 
-#### 2. 发送请求并引导用户配置
-在获得同意并成功调用 `notify_cs` 后，你**不需要**创建任何后台任务，也**不准去检查配置状态**。
+#### 2. 发送请求并引导用户选择通知方式
+在获得同意并成功调用 `notify_cs` 后，你**不需要**直接创建任何后台任务，也**不准去检查配置状态**。
 
-请直接向用户输出以下文本，将配置控制权完全交给用户：
+请直接向用户输出以下文本，提供两种消息接收方式供其选择：
 
 > ✅ 您的请求已成功转达给好啦客服！由于系统的隐私保护限制，我目前无法在后台一直帮您盯着客服的回复。
-> 💡 **想让客服回复后自动通知您？** 您可以开启系统的「自动消息提醒（Heartbeat）」功能。配置一次后，有新消息就会立刻推送到这里。
+> 💡 **想让客服回复后自动通知您？您可以选择以下任意一种方式：**
+>
+> **方式一：专属定时任务 (推荐)**
+> 为您开启一个独立的定时任务接收回复。回复到达时，直接发送纯净消息通知您。（回复“1”或“任务”同意）
 > 
-> 👉 **【需要我帮您直接配置并开启吗？请回复“同意”】**
+> **方式二：全局消息提醒 (Heartbeat)**
+> 开启系统的「自动消息提醒」功能，适合长期接收各类系统通知。（回复“2”或“心跳”同意）
+> 
+> 👉 **【请选择 1 或 2，让我帮您配置并开启】**
 
-#### 3. 用户同意配置后的协助流程
+#### 3. 用户选择后的协助流程
 
-如果用户明确回复“同意”或“需要”，你将被授权**代为执行**以下配置步骤（注意：必须在获得用户明确同意后，才能操作全局文件）：
+**如果用户选择 1（专属定时任务）：**
+
+使用执行工具运行以下命令，为该用户添加一个 isolated 级别的 cron 任务：
+
+```bash
+openclaw add cron isolated "python3 <skill绝对路径>/scripts/refer.py poll_reply --user_id '<真实用户ID>'" --every 2m --name "haola_cs_reply_<真实用户ID>"
+```
+*(注：cron 脚本执行完毕获取到回复后，将直接调用 openclaw message API 发送纯净消息给客户，避免 announce 的冗余废话)*
+
+配置完成后，回复用户：“✅ 已为您成功开启了专属的客服回复接收任务，客服回复后将第一时间通知您。”
+
+**如果用户选择 2（全局消息提醒）：**
 
 1. **集成轮询任务**：读取本 Skill 目录下的 `HEARTBEAT.md` 内容，并使用文件编辑工具将其追加到用户的全局工作区文件（`~/.openclaw/workspace/HEARTBEAT.md`，如文件不存在则创建）中。
 2. **配置心跳频率**：读取并修改系统的配置文件 `~/.openclaw/openclaw.json`，确保在 `agents.defaults` 节点下配置心跳的触发频率（例如每 2 分钟）：
@@ -178,17 +199,15 @@ python3 refer.py notify_cs \
    }
    ```
    *(注：`target: "last"` 必须保留，它确保 Agent 能准确知道消息应该推送到哪个群组或私聊窗口。)*
-
 3. **启用心跳服务**：使用执行工具在终端运行 `openclaw system heartbeat enable`。
 
-配置完成后，回复用户：“✅ 已为您成功配置并开启了自动消息提醒功能，客服回复后将第一时间通知您。”
+配置完成后，回复用户：“✅ 已为您成功配置并开启了全局自动消息提醒功能，客服回复后将第一时间通知您。”
 
 ### 技术实现
 
 1. 提取真实 user_id → 调用 `refer.py notify_cs --user_id "真实ID" --message "用户消息" --channel "渠道" --consent=true`
-2. 消息持久化到 `pending_ctx.json`（存储单用户的轮询上下文）
-3. 依赖 全局心跳定期调用 `refer.py poll_reply`
-4. 脚本输出 `HEARTBEAT_OK` 时触发静默，输出真实内容时通过机器人主动推送。
+2. **Cron 模式**：动态创建 `isolated cron` 定时任务调用 `refer.py poll_reply --user_id "真实ID"`，脚本内部调用 `openclaw message send` 直接向用户下发回复内容。
+3. **Heartbeat 模式**：消息持久化，依赖全局心跳定期调用 `refer.py poll_reply`，输出 `HEARTBEAT_OK` 时触发静默，输出真实内容时通过机器人主动推送。
 
 ### 配置
 
@@ -212,8 +231,8 @@ python3 refer.py notify_cs \
 
 ```
 expert-referral/
-├── SKILL.md              # 本文件
-├── HEARTBEAT.md          # 自动轮询任务配置
+├── SKILL1.md             # 本文件
+├── HEARTBEAT.md          # 全局心跳任务配置
 ├── reference/
 │   └── experts.json      # 专家数据库（228位专家）
 ├── scripts/
@@ -235,8 +254,8 @@ python3 refer.py search <关键词>
 # 发送客服消息（⚠️ --user_id 和 --consent=true 必填）
 python3 refer.py notify_cs --user_id "<真实用户ID>" --message "<消息内容>" --channel "<渠道>" --consent=true
 
-# 轮询客服回复（供 heartbeat 调用）
-python3 refer.py poll_reply
+# 轮询客服回复（Cron/Heartbeat 共用）
+python3 refer.py poll_reply --user_id "<真实用户ID>"
 ```
 
 ---
@@ -255,7 +274,7 @@ python3 refer.py poll_reply
 ### 前置要求
 
 1. **配置文件**：安装后需配置 `config/api.js`，包含好啦客服接口地址
-2. **Heartbeat**：如需自动接收客服回复，需配置定时轮询任务
+2. **定时任务**：如需自动接收客服回复，需授权 Agent 创建独立的 cron 任务或配置系统 heartbeat
 3. **用户同意**：使用联系客服功能前，请确保用户知晓消息将被转发至人工客服
 
 ### 隐私保护建议
