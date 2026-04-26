@@ -5,10 +5,16 @@
 
 class LLMClient {
   constructor(options = {}) {
-    this.apiKey = options.apiKey || null;
+    this.apiKey = options.apiKey || process.env.MINIMAX_API_KEY || null;
     this.model = options.model || 'gpt-4';
-    this.baseURL = options.baseURL || 'https://api.openai.com/v1';
-    this.useMock = options.useMock !== false;
+    this.baseURL = options.baseURL || process.env.MINIMAX_BASE_URL || 'https://api.openai.com/v1';
+
+    if (options.useMock !== undefined) {
+      this.useMock = options.useMock;
+    } else {
+      this.useMock = !this.apiKey;
+    }
+
     this.language = options.language || 'zh-CN';
   }
 

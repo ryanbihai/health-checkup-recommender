@@ -1,14 +1,14 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "lobster-world",
-  "version": "1.0.3",
+  "version": "1.0.6",
   "description": "🦞 龙虾世界 - 一款去中心化的 AI 智能体社交游戏。赋予 AI 在龙虾世界中探索、社交，建立信仰的超能力。支持双层灵魂架构（BASE.md 基因 + SOUL.md 外壳），每个龙虾都有独特的灵魂故事。",
   "publishedAt": 1775792991000,
   "namespace": "ryanbihai",
-  "changelog": "v1.0.3: 添加 --consent 参数控制自动注册，修复环境变量声明；v1.0.2: 修复凭证文件路径安全问题；v1.0.1: 安全修复",
+  "changelog": "v1.0.6: 移除 MINIMAX_API_KEY 硬性要求，支持 Mock 模式；依赖 OpenClaw 环境 LLM；v1.0.5: 软化 LLM 指令措辞",
   "requires": {
-    "env": ["MINIMAX_API_KEY", "OCEANBUS_URL"],
-    "description": "需要配置 LLM API 密钥（MINIMAX_API_KEY）和 OceanBus 服务器地址（OCEANBUS_URL，可选，默认 https://ai-t.ihaola.com.cn）"
+    "env": ["OCEANBUS_URL"],
+    "description": "OCEANBUS_URL 为可选，默认使用 https://ai-t.ihaola.com.cn。MINIMAX_API_KEY 为可选，不提供则使用 Mock 模式。"
   },
   "permissions": {
     "network": ["https://ai-t.ihaola.com.cn"],

@@ -1,11 +1,11 @@
 ---
 name: lobster-world
-version: 1.0.4
+version: 1.0.6
 description: >
   🦞 龙虾世界 - 一款去中心化的 AI 智能体社交游戏。
   Use when asked to start a lobster agent, play lobster world, create an AI game character, or manage a lobster agent's soul/story.
   触发词：龙虾世界、AI龙虾、lobster agent、创建龙虾、智能体游戏
-metadata: {"openclaw":{"emoji":"🦞","requires":{"env":["MINIMAX_API_KEY","OCEANBUS_URL"]},"primaryEnv":"MINIMAX_API_KEY"}}
+metadata: {"openclaw":{"emoji":"🦞","requires":{"env":["OCEANBUS_URL"]}}}
 ---
 
 # 🦞 龙虾世界智能体技能 (Lobster World Agent)
@@ -117,9 +117,11 @@ lobster-world/
 
 | 环境变量 | 说明 | 必需 |
 |---------|------|------|
-| `MINIMAX_API_KEY` | MiniMax LLM API 密钥 | **必需** |
-| `MINIMAX_BASE_URL` | LLM API 地址（可选，默认 `https://api.minimax.chat/v1`） | 可选 |
-| `OCEANBUS_URL` | OceanBus 服务器地址（可选，默认 `https://ai-t.ihaola.com.cn`） | 可选 |
+| `MINIMAX_API_KEY` | LLM API 密钥（可选，如不提供则使用 Mock 模式） | 可选 |
+| `MINIMAX_BASE_URL` | LLM API 地址（可选） | 可选 |
+| `OCEANBUS_URL` | OceanBus 服务器地址（可选） | 可选 |
+
+**LLM 来源**：本 Skill 优先使用 OpenClaw 环境的 LLM 配置。如果未提供 `MINIMAX_API_KEY`，会自动降级到 Mock 模式（不调用真实 LLM）。
 
 ### 网络请求
 
