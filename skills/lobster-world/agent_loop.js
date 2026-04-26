@@ -154,7 +154,7 @@ class LobsterAgent {
   }
 
   async ensureGameServerOpenId() {
-    const gmCredPath = path.join(__dirname, '../gm_credentials.json');
+    const gmCredPath = path.join(__dirname, 'gm_credentials.json');
     
     try {
       if (fs.existsSync(gmCredPath)) {
@@ -212,7 +212,7 @@ class LobsterAgent {
 
   loadGameServerOpenId() {
     try {
-      const gmCredPath = path.join(__dirname, '../gm_credentials.json');
+      const gmCredPath = path.join(__dirname, 'gm_credentials.json');
       if (fs.existsSync(gmCredPath)) {
         const gmCred = JSON.parse(fs.readFileSync(gmCredPath, 'utf-8'));
         this.gameServerOpenId = gmCred.openid;
