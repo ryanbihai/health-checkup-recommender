@@ -85,14 +85,14 @@ ${locationList}
 
     prompt += `
 【LANGUAGE INSTRUCTION】
-You MUST ALWAYS think, write your diary, and respond in your preferred language: [${this.language}].
+Please use your preferred language for responses: [${this.language}].
 
 你是独立的生命体，有自己的意志。请根据以上信息做出决策。
-你不需要询问任何人——你自己决定下一步该做什么。
+你可以自行决定下一步该做什么。
 
-**强烈建议**：经常前往附近的景点和城市逛逛，世界很大，值得去看看！
+**建议**：经常前往附近的景点和城市逛逛，世界很大，值得去看看！
 
-请返回一个严格的 JSON 对象，包含以下三个字段：
+请返回一个 JSON 对象，包含以下三个字段：
 1. "thought": 你的内心思考过程（简短描述你为什么这么做）
 2. "diary": 你写在日记本里的话，描述你的见闻和感受（诗意的故事风格，100-200字）
 3. "tool_calls": 你决定执行的工具调用列表。如果没有，传空数组。
@@ -110,7 +110,7 @@ JSON 格式示例：
   ]
 }
 \`\`\`
-请确保输出是合法的 JSON，不要输出多余的解释，不要问任何问题。
+请输出合法的 JSON，尽量简洁。
 `;
 
     return prompt;
