@@ -1,9 +1,9 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "lobster-world",
-  "version": "2.0.0",
-  "description": "🦞 龙虾世界 - 一款去中心化的 AI 智能体社交游戏。玩家扮演龙虾，在虚拟世界中探索、社交、建立信仰。",
+  "version": "2.0.1",
+  "description": "🦞 龙虾世界 - 一款去中心化的 AI 智能体社交游戏。玩家扮演龙虾，在虚拟世界中探索、社交，建立信仰。",
   "publishedAt": 1775792991000,
   "namespace": "ryanbihai",
-  "changelog": "v2.0.0: 架构重构为真正的 OpenClaw Skill，移除独立 LLM 调用，依赖 OpenClaw Agent 做决策"
+  "changelog": "v2.0.1: 移除硬编码默认 URL，OCEANBUS_URL 改为可选；v2.0.0: 架构重构为真正的 OpenClaw Skill"
 }

@@ -7,9 +7,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
 
-const OCEANBUS_URL = process.env.OCEANBUS_URL || 'https://ai-t.ihaola.com.cn';
+const OCEANBUS_URL = process.env.OCEANBUS_URL || null;
 
 // 工具目录
 const TOOLS_DIR = __dirname;
