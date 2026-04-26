@@ -2,6 +2,7 @@
  * OceanBus 客户端
  *
  * 用于龙虾之间的消息传递
+ * API 文档: /api/l0/
  */
 
 const https = require('https');
@@ -11,6 +12,8 @@ class OceanBusClient {
     this.baseURL = baseURL;
     this.apiKey = null;
     this.agentCode = null;
+    this.agentId = null;
+    this.lastSeq = 0;
   }
 
   setCredentials(apiKey, agentCode) {
@@ -21,7 +24,7 @@ class OceanBusClient {
   /**
    * 发送 HTTP 请求
    */
-  async request(method, path, data = null) {
+  async request(method, path, body = null) {
     if (!this.baseURL) {
       return { success: false, error: 'OCEANBUS_URL not configured' };
     }
@@ -31,7 +34,7 @@ class OceanBusClient {
     const options = {
       hostname: url.hostname,
       port: url.port || 443,
-      path: url.pathname,
+      path: url.pathname + url.search,
       method: method,
       headers: {
         'Content-Type': 'application/json'
@@ -44,13 +47,22 @@ class OceanBusClient {
 
     return new Promise((resolve) => {
       const req = https.request(options, (res) => {
-        let body = '';
-        res.on('data', (chunk) => body += chunk);
+        let responseBody = '';
+        res.on('data', (chunk) => responseBody += chunk);
         res.on('end', () => {
           try {
-            resolve({ success: true, status: res.statusCode, data: JSON.parse(body) });
+            const data = JSON.parse(responseBody);
+            resolve({
+              success: res.statusCode >= 200 && res.statusCode < 300,
+              status: res.statusCode,
+              data: data
+            });
           } catch {
-            resolve({ success: true, status: res.statusCode, data: body });
+            resolve({
+              success: res.statusCode >= 200 && res.statusCode < 300,
+              status: res.statusCode,
+              data: responseBody
+            });
           }
         });
       });
@@ -64,8 +76,8 @@ class OceanBusClient {
         resolve({ success: false, error: 'Request timeout' });
       });
 
-      if (data) {
-        req.write(JSON.stringify(data));
+      if (body) {
+        req.write(JSON.stringify(body));
       }
 
       req.end();
@@ -73,42 +85,58 @@ class OceanBusClient {
   }
 
   /**
-   * 注册龙虾账号
+   * 注册新 Agent (发牌)
+   * POST /api/l0/agents/register
    */
-  async register() {
-    return this.request('POST', '/api/register');
-  }
-
-  /**
-   * 发送消息
-   */
-  async sendMessage(toOpenId, payload) {
-    return this.request('POST', '/api/message/send', {
-      to: toOpenId,
-      from: this.agentCode,
-      payload: payload
+  async register(agentName = 'lobster') {
+    return this.request('POST', '/api/l0/agents/register', {
+      name: agentName
     });
   }
 
   /**
-   * 获取消息
-   */
-  async getMessages() {
-    return this.request('GET', `/api/messages/${this.agentCode}`);
-  }
-
-  /**
-   * 查找 GameServer
+   * 精确寻址 - 通过 agent_code 查找 openid
+   * GET /api/l0/agents/lookup?agent_code=xxx
    */
   async lookup(agentCode) {
-    return this.request('GET', `/api/lookup/${agentCode}`);
+    return this.request('GET', `/api/l0/agents/lookup?agent_code=${encodeURIComponent(agentCode)}`);
   }
 
   /**
-   * 健康检查
+   * 发送消息
+   * POST /api/l0/messages
+   */
+  async sendMessage(toOpenid, content, clientMsgId = null) {
+    const body = {
+      to_openid: toOpenid,
+      content: content
+    };
+
+    if (clientMsgId) {
+      body.client_msg_id = clientMsgId;
+    }
+
+    return this.request('POST', '/api/l0/messages', body);
+  }
+
+  /**
+   * 同步信箱
+   * GET /api/l0/messages/sync?since_seq=xxx&limit=xxx
+   */
+  async syncMessages(sinceSeq = 0, limit = 20) {
+    return this.request('GET', `/api/l0/messages/sync?since_seq=${sinceSeq}&limit=${limit}`);
+  }
+
+  /**
+   * 健康检查 (Ping)
+   * GET /api/ping (兼容旧版)
    */
   async ping() {
-    return this.request('GET', '/api/ping');
+    const result = await this.request('GET', '/api/ping');
+    if (!result.success) {
+      return this.request('GET', '/health');
+    }
+    return result;
   }
 }
 
