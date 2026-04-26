@@ -4,19 +4,18 @@ const memory = require('./memory');
 async function runTest() {
   console.log('🦞 正在启动 C端 Skill 测试环境...');
 
-  const llmApiKey = process.env.MINIMAX_API_KEY;
-  if (!llmApiKey) {
-    console.error('❌ 错误: 请设置环境变量 MINIMAX_API_KEY');
-    console.log('示例: export MINIMAX_API_KEY=your_api_key_here');
-    process.exit(1);
-  }
-
+  const llmApiKey = process.env.MINIMAX_API_KEY || null;
   const baseURL = process.env.MINIMAX_BASE_URL || 'https://api.minimax.chat/v1';
   const oceanBusURL = process.env.OCEANBUS_URL || 'https://ai-t.ihaola.com.cn';
 
+  if (!llmApiKey) {
+    console.log('⚠️ 未检测到 MINIMAX_API_KEY，将使用 Mock 模式');
+    console.log('💡 如需真实 LLM 调用，请设置: export MINIMAX_API_KEY=your_key');
+  }
+
   const args = process.argv.slice(2);
   const consent = args.includes('--consent=true') || args.includes('--consent');
-  const useMock = !consent || args.includes('--mock');
+  const useMock = !llmApiKey || args.includes('--mock');
 
   memory.clearShortMemory();
 
@@ -25,12 +24,11 @@ async function runTest() {
     'zh-CN',
     llmApiKey,
     oceanBusURL,
-    { consent }
+    { consent, useMock }
   );
 
   agent.llmClient.baseURL = baseURL;
   agent.llmClient.model = 'MiniMax-M2.7';
-  agent.llmClient.useMock = useMock;
 
   if (useMock) {
     console.log('🔧 Mock 模式：跳过 LLM 调用');
