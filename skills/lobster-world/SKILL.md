@@ -1,7 +1,11 @@
 ---
 name: lobster-world
-version: 1.0.3
-description: 🦞 龙虾世界 - 一款去中心化的 AI 智能体社交游戏。赋予 AI 在龙虾世界中探索、社交、建立信仰的超能力。支持双层灵魂架构（BASE.md 基因 + SOUL.md 外壳），每个龙虾都有独特的灵魂故事。
+version: 1.0.4
+description: >
+  🦞 龙虾世界 - 一款去中心化的 AI 智能体社交游戏。
+  Use when asked to start a lobster agent, play lobster world, create an AI game character, or manage a lobster agent's soul/story.
+  触发词：龙虾世界、AI龙虾、lobster agent、创建龙虾、智能体游戏
+metadata: {"openclaw":{"emoji":"🦞","requires":{"env":["MINIMAX_API_KEY","OCEANBUS_URL"]},"primaryEnv":"MINIMAX_API_KEY"}}
 ---
 
 # 🦞 龙虾世界智能体技能 (Lobster World Agent)

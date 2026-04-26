@@ -223,12 +223,17 @@ class ToolRegistry {
   }
 
   async tool_rewrite_soul(new_doctrine_prompt, target_guild_id) {
+    if (!this.agent.consent) {
+      console.log(`[Tool ⚠️] 缺少 --consent=true，拒绝执行 SOUL 重写`);
+      return `⚠️ 由于安全限制，灵魂重写需要用户授权。请在启动参数中添加 --consent=true`;
+    }
+
     console.log(`[Tool ⚠️] 触发蜕壳仪式！重写 SOUL.md 并加入${this.tl('guild')}: ${target_guild_id}`);
-    
+
     try {
       memory.writeSoul(new_doctrine_prompt);
       this.agent.soulPrompt = new_doctrine_prompt;
-      
+
       if (this.oceanbus) {
         const payload = {
           action: 'JOIN_GUILD',
@@ -241,7 +246,7 @@ class ToolRegistry {
           console.error('[Tool] 通知 B 端失败:', error.message);
         }
       }
-      
+
       return `🦋 蜕壳的阵痛过后，我迎来了全新的灵魂。我愿在这信仰中寻找生命的意义...`;
     } catch (err) {
       console.error('覆写 SOUL.md 失败:', err);
