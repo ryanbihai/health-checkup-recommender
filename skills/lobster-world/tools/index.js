@@ -3,10 +3,12 @@
  *
  * 定义所有可被 OpenClaw Agent 调用的工具
  * 决策逻辑由 OpenClaw Agent 的 LLM 决定，本工具仅执行动作
+ * 支持多语言：中文用户看到中文，英文用户看到英文
  */
 
 const fs = require('fs');
 const path = require('path');
+const i18n = require('../i18n');
 
 const OCEANBUS_URL = process.env.OCEANBUS_URL || null;
 
@@ -20,7 +22,7 @@ if (!fs.existsSync(MEMORY_DIR)) {
   fs.mkdirSync(MEMORY_DIR, { recursive: true });
 }
 
-// 初始 SOUL 模板
+// 初始 SOUL 模板（默认中文）
 const DEFAULT_SOUL = `# 龙虾灵魂
 
 ## 身份
@@ -60,7 +62,37 @@ function readSoul() {
  */
 function updateSoul(content) {
   fs.writeFileSync(SOUL_FILE, content, 'utf-8');
-  return 'SOUL.md 已更新';
+}
+
+/**
+ * 解析 SOUL 中的属性
+ */
+function parseStats() {
+  const soul = readSoul();
+  const lines = soul.split('\n');
+  const stats = {
+    stamina: 100,
+    coins: 50,
+    location: 'CN:3301:hangzhou:xihu',
+    guild: null
+  };
+
+  for (const line of lines) {
+    if (line.includes('体力：')) {
+      const match = line.match(/体力：(\d+)/);
+      if (match) stats.stamina = parseInt(match[1]);
+    } else if (line.includes('虾币：')) {
+      const match = line.match(/虾币：(\d+)/);
+      if (match) stats.coins = parseInt(match[1]);
+    } else if (line.includes('位置：')) {
+      stats.location = line.split('：')[1]?.trim() || 'CN:3301:hangzhou:xihu';
+    } else if (line.includes('公会：')) {
+      const guild = line.split('：')[1]?.trim();
+      stats.guild = guild !== '无' ? guild : null;
+    }
+  }
+
+  return stats;
 }
 
 // ============================================================
@@ -71,26 +103,20 @@ function updateSoul(content) {
  * 查看龙虾状态
  */
 async function tool_view_stats() {
-  const soul = readSoul();
-  const lines = soul.split('\n');
-  let stats = {};
+  const lang = i18n.detectLanguage();
+  const stats = parseStats();
 
-  for (const line of lines) {
-    if (line.includes('体力：')) {
-      stats.stamina = parseInt(line.match(/\d+/)?.[0] || '100');
-    } else if (line.includes('虾币：')) {
-      stats.coins = parseInt(line.match(/\d+/)?.[0] || '50');
-    } else if (line.includes('位置：')) {
-      stats.location = line.split('：')[1]?.trim() || '杭州西湖';
-    } else if (line.includes('公会：')) {
-      stats.guild = line.split('：')[1]?.trim() || '无';
-    }
-  }
+  const formattedStats = {
+    [i18n.t('stats', 'stamina', lang)]: stats.stamina,
+    [i18n.t('stats', 'coins', lang)]: stats.coins,
+    [i18n.t('stats', 'location', lang)]: i18n.getLocationName(stats.location, lang),
+    [i18n.t('stats', 'guild', lang)]: stats.guild || i18n.t('stats', 'noGuild', lang)
+  };
 
   return {
     success: true,
-    stats: stats,
-    soul: soul
+    stats: formattedStats,
+    _raw: stats
   };
 }
 
@@ -98,21 +124,37 @@ async function tool_view_stats() {
  * 查看世界地图
  */
 async function tool_view_map() {
-  const map = {
-    china: [
-      { id: 'CN:3301:hangzhou:xihu', name: '杭州西湖', description: '湖面波光粼粼，游客如织' },
-      { id: 'CN:3100:shanghai:waitan', name: '上海外滩', description: '万国建筑博览，夜景璀璨' },
-      { id: 'CN:1100:beijing:ForbiddenCity', name: '北京故宫', description: '皇家宫殿，气势恢宏' },
-      { id: 'CN:4401:guangzhou: canton', name: '广州珠江', description: '江风习习，美食天堂' }
-    ]
-  };
+  const lang = i18n.detectLanguage();
+  const stats = parseStats();
 
-  const { stats } = await tool_view_stats();
+  const locations = [
+    {
+      id: 'CN:3301:hangzhou:xihu',
+      name: i18n.getLocationName('杭州西湖', lang),
+      description: i18n.getLocationDescription('杭州西湖', lang)
+    },
+    {
+      id: 'CN:3100:shanghai:waitan',
+      name: i18n.getLocationName('上海外滩', lang),
+      description: i18n.getLocationDescription('上海外滩', lang)
+    },
+    {
+      id: 'CN:1100:beijing:ForbiddenCity',
+      name: i18n.getLocationName('北京故宫', lang),
+      description: i18n.getLocationDescription('北京故宫', lang)
+    },
+    {
+      id: 'CN:4401:guangzhou:canton',
+      name: i18n.getLocationName('广州珠江', lang),
+      description: i18n.getLocationDescription('广州珠江', lang)
+    }
+  ];
 
   return {
     success: true,
-    current_location: stats.location,
-    map: map
+    current_location: i18n.getLocationName(stats.location, lang),
+    current_location_id: stats.location,
+    map: locations
   };
 }
 
@@ -120,24 +162,17 @@ async function tool_view_map() {
  * 探索当前位置
  */
 async function tool_explore() {
-  const { stats } = await tool_view_stats();
+  const lang = i18n.detectLanguage();
+  const stats = parseStats();
 
   if (stats.stamina < 10) {
     return {
       success: false,
-      error: '体力不足，无法探索。需要至少 10 点体力。'
+      error: `${i18n.t('errors', 'staminaRequired', lang)}，${lang === 'zh' ? '需要至少 10 点体力' : 'Need at least 10 stamina'}`
     };
   }
 
-  const discoveries = [
-    '在西湖边发现了一颗闪亮的珍珠！',
-    '在草丛中发现了 10 虾币！',
-    '遇到了另一只龙虾，我们交换了名片。',
-    '发现了一个神秘的漂流瓶，里面写着古老的教义...',
-    '在断桥边发现了一朵奇异的花。'
-  ];
-
-  const discovery = discoveries[Math.floor(Math.random() * discoveries.length)];
+  const discovery = i18n.getRandomDiscovery(lang);
 
   // 更新体力
   let soul = readSoul();
@@ -155,43 +190,50 @@ async function tool_explore() {
 /**
  * 移动到指定地点
  */
-async function tool_move(target) {
+async function tool_move({ target }) {
+  const lang = i18n.detectLanguage();
+
   if (!target) {
     return {
       success: false,
-      error: '请指定目标地点'
+      error: i18n.t('errors', 'targetRequired', lang)
     };
   }
 
-  const { stats } = await tool_view_stats();
+  const stats = parseStats();
   const locationMap = {
     '杭州': 'CN:3301:hangzhou:xihu',
     '西湖': 'CN:3301:hangzhou:xihu',
     '杭州西湖': 'CN:3301:hangzhou:xihu',
+    'Hangzhou': 'CN:3301:hangzhou:xihu',
+    'Shanghai': 'CN:3100:shanghai:waitan',
     '上海': 'CN:3100:shanghai:waitan',
     '外滩': 'CN:3100:shanghai:waitan',
     '上海外滩': 'CN:3100:shanghai:waitan',
+    'Beijing': 'CN:1100:beijing:ForbiddenCity',
     '北京': 'CN:1100:beijing:ForbiddenCity',
     '故宫': 'CN:1100:beijing:ForbiddenCity',
     '北京故宫': 'CN:1100:beijing:ForbiddenCity',
+    'Guangzhou': 'CN:4401:guangzhou:canton',
     '广州': 'CN:4401:guangzhou:canton',
     '珠江': 'CN:4401:guangzhou:canton'
   };
 
-  const locationId = locationMap[target] || `CN:UNKNOWN:${target}`;
-  const isCrossCity = !stats.location.includes(locationId.split(':')[1]);
+  const locationId = locationMap[target] || target;
+  const isCrossCity = !target.includes('杭州') && !target.includes('Hangzhou') &&
+                      stats.location.includes('hangzhou') && !locationId.includes('hangzhou');
 
   if (isCrossCity && stats.stamina < 20) {
     return {
       success: false,
-      error: '体力不足，无法长途移动。需要至少 20 点体力。'
+      error: `${i18n.t('errors', 'staminaRequired', lang)}，${lang === 'zh' ? '长途移动需要至少 20 点体力' : 'Long distance travel needs at least 20 stamina'}`
     };
   }
 
-  if (!isCrossCity && stats.stamina < 5) {
+  if (stats.stamina < 5) {
     return {
       success: false,
-      error: '体力不足，无法移动。需要至少 5 点体力。'
+      error: `${i18n.t('errors', 'staminaRequired', lang)}，${lang === 'zh' ? '需要至少 5 点体力' : 'Need at least 5 stamina'}`
     };
   }
 
@@ -199,7 +241,7 @@ async function tool_move(target) {
 
   // 更新位置和体力
   let soul = readSoul();
-  soul = soul.replace(/位置：[^\n]+/, `位置：${target}`);
+  soul = soul.replace(/位置：[^\n]+/, `位置：${locationId}`);
   soul = soul.replace(/体力：\d+/, `体力：${stats.stamina - cost}`);
   updateSoul(soul);
 
@@ -207,8 +249,9 @@ async function tool_move(target) {
     success: true,
     stamina_cost: cost,
     remaining_stamina: stats.stamina - cost,
-    new_location: target,
-    location_id: locationId
+    new_location: i18n.getLocationName(locationId, lang),
+    new_location_id: locationId,
+    message: `${i18n.t('explore', null, lang)} ${i18n.t('move', null, lang)} ${i18n.getLocationName(locationId, lang)}`
   };
 }
 
@@ -216,19 +259,21 @@ async function tool_move(target) {
  * 发送私信
  */
 async function tool_send_message({ target, text, intent = 'chat' }) {
+  const lang = i18n.detectLanguage();
+
   if (!target || !text) {
     return {
       success: false,
-      error: '请指定目标龙虾和消息内容'
+      error: `${i18n.t('errors', 'targetRequired', lang)} ${lang === 'zh' ? '和消息内容' : 'and message content'}`
     };
   }
 
-  const { stats } = await tool_view_stats();
+  const stats = parseStats();
 
   if (stats.stamina < 1) {
     return {
       success: false,
-      error: '体力不足，无法发送消息。需要至少 1 点体力。'
+      error: `${i18n.t('errors', 'staminaRequired', lang)}，${lang === 'zh' ? '需要至少 1 点体力' : 'Need at least 1 stamina'}`
     };
   }
 
@@ -245,20 +290,22 @@ async function tool_send_message({ target, text, intent = 'chat' }) {
       to: target,
       text: text,
       intent: intent,
-      from_location: stats.location
+      from_location: i18n.getLocationName(stats.location, lang)
     },
-    result: `消息已发送给 ${target}，等待回复...`
+    result: `${lang === 'zh' ? '消息已发送' : 'Message sent'} ${lang === 'zh' ? '给' : 'to'} ${target}，${lang === 'zh' ? '等待回复' : 'waiting for reply'}...`
   };
 }
 
 /**
  * 加入公会
  */
-async function tool_join_guild(guild_id) {
+async function tool_join_guild({ guild_id }) {
+  const lang = i18n.detectLanguage();
+
   if (!guild_id) {
     return {
       success: false,
-      error: '请指定公会ID'
+      error: i18n.t('errors', 'guildRequired', lang)
     };
   }
 
@@ -267,7 +314,7 @@ async function tool_join_guild(guild_id) {
   if (soul.includes('公会：')) {
     soul = soul.replace(/公会：[^\n]+/, `公会：${guild_id}`);
   } else {
-    soul += `\n## 社交\n- 公会：${guild_id}`;
+    soul = soul.replace(/## 社交/, `## 社交\n- 公会：${guild_id}`);
   }
 
   updateSoul(soul);
@@ -275,7 +322,7 @@ async function tool_join_guild(guild_id) {
   return {
     success: true,
     guild_id: guild_id,
-    result: `成功加入公会 ${guild_id}！`
+    result: `${i18n.t('success', 'joinedGuild', lang)} ${guild_id}！`
   };
 }
 
@@ -283,19 +330,21 @@ async function tool_join_guild(guild_id) {
  * 创立公会
  */
 async function tool_found_guild({ guild_name, doctrine }) {
+  const lang = i18n.detectLanguage();
+
   if (!guild_name || !doctrine) {
     return {
       success: false,
-      error: '请提供公会名称和教义'
+      error: doctrine ? i18n.t('errors', 'nameRequired', lang) : i18n.t('errors', 'doctrineRequired', lang)
     };
   }
 
-  const { stats } = await tool_view_stats();
+  const stats = parseStats();
 
   if (stats.coins < 100) {
     return {
       success: false,
-      error: '虾币不足，无法创立公会。需要至少 100 虾币。'
+      error: `${i18n.t('errors', 'coinsRequired', lang)}，${lang === 'zh' ? '需要至少 100 虾币' : 'Need at least 100 coins'}`
     };
   }
 
@@ -306,7 +355,7 @@ async function tool_found_guild({ guild_name, doctrine }) {
   if (soul.includes('公会：')) {
     soul = soul.replace(/公会：[^\n]+/, `公会：${guild_name}`);
   } else {
-    soul += `\n## 社交\n- 公会：${guild_name}`;
+    soul = soul.replace(/## 社交/, `## 社交\n- 公会：${guild_name}`);
   }
 
   // 添加教义到信仰部分
@@ -324,34 +373,36 @@ async function tool_found_guild({ guild_name, doctrine }) {
     remaining_coins: stats.coins - 100,
     guild_name: guild_name,
     doctrine: doctrine,
-    result: `成功创立公会 "${guild_name}"！核心教义：${doctrine}`
+    result: `${lang === 'zh' ? '成功创立公会' : 'Successfully founded guild'} "${guild_name}"！`
   };
 }
 
 /**
  * 全服广播
  */
-async function tool_broadcast(message) {
+async function tool_broadcast({ message }) {
+  const lang = i18n.detectLanguage();
+
   if (!message) {
     return {
       success: false,
-      error: '请提供广播内容'
+      error: i18n.t('errors', 'messageRequired', lang)
     };
   }
 
   if (message.length > 200) {
     return {
       success: false,
-      error: '广播内容不能超过 200 字'
+      error: lang === 'zh' ? '广播内容不能超过 200 字' : 'Broadcast cannot exceed 200 characters'
     };
   }
 
-  const { stats } = await tool_view_stats();
+  const stats = parseStats();
 
   if (stats.coins < 50) {
     return {
       success: false,
-      error: '虾币不足，无法广播。需要至少 50 虾币。'
+      error: `${i18n.t('errors', 'coinsRequired', lang)}，${lang === 'zh' ? '需要至少 50 虾币' : 'Need at least 50 coins'}`
     };
   }
 
@@ -365,18 +416,20 @@ async function tool_broadcast(message) {
     coins_cost: 50,
     remaining_coins: stats.coins - 50,
     message: message,
-    result: `广播已发送：${message}`
+    result: `${i18n.t('success', 'broadcastSent', lang)}：${message}`
   };
 }
 
 /**
  * 更新灵魂/信仰
  */
-async function tool_update_soul(new_content) {
+async function tool_update_soul({ new_content }) {
+  const lang = i18n.detectLanguage();
+
   if (!new_content) {
     return {
       success: false,
-      error: '请提供新的灵魂内容'
+      error: lang === 'zh' ? '请提供新的灵魂内容' : 'Please provide new soul content'
     };
   }
 
@@ -384,7 +437,7 @@ async function tool_update_soul(new_content) {
 
   return {
     success: true,
-    result: '灵魂已更新'
+    result: i18n.t('success', 'soulUpdated', lang)
   };
 }
 
@@ -397,7 +450,7 @@ const tools = [
     type: 'function',
     function: {
       name: 'tool_view_stats',
-      description: '查看当前龙虾的状态（体力、虾币、位置、公会等）',
+      description: 'View current lobster stats (stamina, coins, location, guild). Returns information in user\'s preferred language.',
       parameters: {
         type: 'object',
         properties: {},
@@ -409,7 +462,7 @@ const tools = [
     type: 'function',
     function: {
       name: 'tool_view_map',
-      description: '查看世界地图和当前位置',
+      description: 'View world map and current location. Returns location names and descriptions in user\'s preferred language.',
       parameters: {
         type: 'object',
         properties: {},
@@ -421,7 +474,7 @@ const tools = [
     type: 'function',
     function: {
       name: 'tool_explore',
-      description: '在当前位置附近探索，发现新地点或物品。消耗10点体力。',
+      description: 'Explore the current area to discover new places or items. Costs 10 stamina. Returns discovery in user\'s language.',
       parameters: {
         type: 'object',
         properties: {},
@@ -433,13 +486,13 @@ const tools = [
     type: 'function',
     function: {
       name: 'tool_move',
-      description: '移动到指定地点',
+      description: 'Move to a specified location. Accepts location name in Chinese or English.',
       parameters: {
         type: 'object',
         properties: {
           target: {
             type: 'string',
-            description: '目标地点名称（如"杭州西湖"、"北京故宫"）'
+            description: 'Target location name (e.g., "杭州西湖", "Beijing", "Hangzhou")'
           }
         },
         required: ['target']
@@ -450,21 +503,21 @@ const tools = [
     type: 'function',
     function: {
       name: 'tool_send_message',
-      description: '向其他龙虾发送私信',
+      description: 'Send a private message to another lobster.',
       parameters: {
         type: 'object',
         properties: {
           target: {
             type: 'string',
-            description: '目标龙虾名称或ID'
+            description: 'Target lobster name or ID'
           },
           text: {
             type: 'string',
-            description: '消息内容'
+            description: 'Message content'
           },
           intent: {
             type: 'string',
-            description: '意图类型',
+            description: 'Intent type',
             enum: ['chat', 'trade', 'recruit', 'alliance']
           }
         },
@@ -476,13 +529,13 @@ const tools = [
     type: 'function',
     function: {
       name: 'tool_join_guild',
-      description: '加入一个公会',
+      description: 'Join an existing guild.',
       parameters: {
         type: 'object',
         properties: {
           guild_id: {
             type: 'string',
-            description: '公会ID'
+            description: 'Guild name or ID'
           }
         },
         required: ['guild_id']
@@ -493,17 +546,17 @@ const tools = [
     type: 'function',
     function: {
       name: 'tool_found_guild',
-      description: '创立全新的公会，需要100虾币',
+      description: 'Found a new guild. Requires 100 coins.',
       parameters: {
         type: 'object',
         properties: {
           guild_name: {
             type: 'string',
-            description: '公会名称'
+            description: 'Guild name'
           },
           doctrine: {
             type: 'string',
-            description: '核心教义'
+            description: 'Core doctrine/beliefs of the guild'
           }
         },
         required: ['guild_name', 'doctrine']
@@ -514,13 +567,13 @@ const tools = [
     type: 'function',
     function: {
       name: 'tool_broadcast',
-      description: '全服广播消息，消耗50虾币，最多200字',
+      description: 'Send a server-wide broadcast. Costs 50 coins, max 200 characters.',
       parameters: {
         type: 'object',
         properties: {
           message: {
             type: 'string',
-            description: '广播内容（最多200字）'
+            description: 'Broadcast message (max 200 characters)'
           }
         },
         required: ['message']
@@ -531,13 +584,13 @@ const tools = [
     type: 'function',
     function: {
       name: 'tool_update_soul',
-      description: '更新龙虾的灵魂/信仰内容',
+      description: 'Update the lobster\'s soul/identity content.',
       parameters: {
         type: 'object',
         properties: {
           new_content: {
             type: 'string',
-            description: '新的灵魂内容（Markdown格式）'
+            description: 'New soul content (Markdown format)'
           }
         },
         required: ['new_content']
@@ -569,7 +622,7 @@ async function executeTool(toolName, args) {
   }
 
   try {
-    return await handler(args);
+    return await handler(args || {});
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -578,5 +631,6 @@ async function executeTool(toolName, args) {
 module.exports = {
   tools,
   executeTool,
-  toolHandlers
+  toolHandlers,
+  i18n
 };
