@@ -4,18 +4,22 @@
  * 定义所有可被 OpenClaw Agent 调用的工具
  * 决策逻辑由 OpenClaw Agent 的 LLM 决定，本工具仅执行动作
  * 支持多语言：中文用户看到中文，英文用户看到英文
+ * 支持 OceanBus 消息传递
  */
 
 const fs = require('fs');
 const path = require('path');
 const i18n = require('../i18n');
+const { createClient: createOceanBusClient } = require('../oceanbus_client');
 
 const OCEANBUS_URL = process.env.OCEANBUS_URL || null;
+const oceanbusClient = createOceanBusClient(OCEANBUS_URL);
 
 // 工具目录
 const TOOLS_DIR = __dirname;
 const MEMORY_DIR = path.join(TOOLS_DIR, '..', 'memory');
 const SOUL_FILE = path.join(MEMORY_DIR, 'SOUL.md');
+const CRED_FILE = path.join(TOOLS_DIR, '..', 'oceanbus_credentials.json');
 
 // 确保 memory 目录存在
 if (!fs.existsSync(MEMORY_DIR)) {
@@ -277,12 +281,26 @@ async function tool_send_message({ target, text, intent = 'chat' }) {
     };
   }
 
+  // 尝试通过 OceanBus 发送消息
+  let oceanResult = null;
+  if (OCEANBUS_URL) {
+    try {
+      oceanResult = await oceanbusClient.sendMessage(target, {
+        text: text,
+        intent: intent,
+        from_location: stats.location
+      });
+    } catch (e) {
+      oceanResult = { success: false, error: e.message };
+    }
+  }
+
   // 更新体力
   let soul = readSoul();
   soul = soul.replace(/体力：\d+/, `体力：${stats.stamina - 1}`);
   updateSoul(soul);
 
-  return {
+  const result = {
     success: true,
     stamina_cost: 1,
     remaining_stamina: stats.stamina - 1,
@@ -291,9 +309,22 @@ async function tool_send_message({ target, text, intent = 'chat' }) {
       text: text,
       intent: intent,
       from_location: i18n.getLocationName(stats.location, lang)
-    },
-    result: `${lang === 'zh' ? '消息已发送' : 'Message sent'} ${lang === 'zh' ? '给' : 'to'} ${target}，${lang === 'zh' ? '等待回复' : 'waiting for reply'}...`
+    }
   };
+
+  if (oceanResult && oceanResult.success) {
+    result.result = `${lang === 'zh' ? '消息已发送（通过 OceanBus）' : 'Message sent (via OceanBus)'} ${lang === 'zh' ? '给' : 'to'} ${target}`;
+    result.oceanbus_status = 'sent';
+  } else if (OCEANBUS_URL) {
+    result.result = `${lang === 'zh' ? '消息已保存（OceanBus 未连接）' : 'Message saved (OceanBus offline)'} ${lang === 'zh' ? '给' : 'to'} ${target}`;
+    result.oceanbus_status = 'offline';
+    result.oceanbus_error = oceanResult?.error || 'Connection failed';
+  } else {
+    result.result = `${lang === 'zh' ? '消息已保存（未配置 OceanBus）' : 'Message saved (OceanBus not configured)'} ${lang === 'zh' ? '给' : 'to'} ${target}`;
+    result.oceanbus_status = 'not_configured';
+  }
+
+  return result;
 }
 
 /**
