@@ -6,10 +6,11 @@ const ToolRegistry = require('./tools');
 const OceanBusClient = require('./oceanbus_client');
 
 class LobsterAgent {
-  constructor(openid, language = 'zh-CN', llmApiKey = null, oceanBusURL = 'https://ai-t.ihaola.com.cn') {
+  constructor(openid, language = 'zh-CN', llmApiKey = null, oceanBusURL = 'https://ai-t.ihaola.com.cn', options = {}) {
     this.openid = openid;
     this.language = language;
     this.llmApiKey = llmApiKey;
+    this.consent = options.consent || false;  // 需要用户同意才能自动注册
     this.isRunning = false;
     this.cronInterval = null;
     this.lastSeq = 0;
@@ -37,36 +38,46 @@ class LobsterAgent {
     this.todayNewFriends = [];
     this.todayEvents = [];
     this.lastPostcardDate = null;
-    this.lastReportDateMorning = null; // 上次早报日期
-    this.lastReportDateEvening = null; // 上次晚报日期
+    this.lastReportDateMorning = null;
+    this.lastReportDateEvening = null;
     this.currentLocation = null;
     this.lastLocation = null;
   }
 
   async ensureOceanBusCredentials() {
     const credPath = path.join(__dirname, 'test_lobster_credentials.json');
-    
+
     if (fs.existsSync(credPath)) {
-      const cred = JSON.parse(fs.readFileSync(credPath, 'utf-8'));
-      if (cred.api_key && cred.agent_code) {
-        this.oceanbusClient.setCredentials(cred.api_key, cred.agent_code);
-        this.openid = cred.agent_code;
-        console.log(`[${this.openid}] ✅ 已加载 OceanBus 凭证: agent_code=${cred.agent_code}`);
-        return true;
+      try {
+        const cred = JSON.parse(fs.readFileSync(credPath, 'utf-8'));
+        if (cred.api_key && cred.agent_code) {
+          this.oceanbusClient.setCredentials(cred.api_key, cred.agent_code);
+          this.openid = cred.agent_code;
+          console.log(`[${this.openid}] ✅ 已加载 OceanBus 凭证: agent_code=${cred.agent_code}`);
+          return true;
+        }
+      } catch (e) {
+        console.log(`[${this.openid}] ⚠️ 凭证文件解析失败，将尝试重新注册`);
       }
     }
 
-    console.log(`[${this.openid}] 🔄 首次使用，正在注册新龙虾账号...`);
+    if (!this.consent) {
+      console.log(`[${this.openid}] ⚠️ 缺少 --consent=true 参数，拒绝自动注册`);
+      console.log(`[${this.openid}] 请提供环境变量或手动创建 ${credPath} 文件`);
+      return false;
+    }
+
+    console.log(`[${this.openid}] 🔄 获得用户授权，正在注册新龙虾账号...`);
     try {
       const credentials = await this.oceanbusClient.register();
       credentials.openid = credentials.agent_id;
-      
+
       fs.writeFileSync(credPath, JSON.stringify(credentials, null, 2));
       this.openid = credentials.agent_code;
       console.log(`[${this.openid}] ✅ 注册成功并保存凭证到 ${credPath}`);
-      
+
       await this.generateStoryPrologue();
-      
+
       return true;
     } catch (error) {
       console.error(`[${this.openid}] ❌ 注册失败:`, error.message);
@@ -155,29 +166,34 @@ class LobsterAgent {
 
   async ensureGameServerOpenId() {
     const gmCredPath = path.join(__dirname, 'gm_credentials.json');
-    
+
     try {
       if (fs.existsSync(gmCredPath)) {
         const gmCred = JSON.parse(fs.readFileSync(gmCredPath, 'utf-8'));
-        
+
         if (gmCred.agent_code) {
           const storedOpenid = gmCred.openid || '';
           const isEncryptedOpenid = storedOpenid.length > 50;
-          
+
           if (isEncryptedOpenid && storedOpenid !== 'gameserver') {
             this.gameServerOpenId = storedOpenid;
             this.gmAgentCode = gmCred.agent_code;
             console.log(`[${this.openid}] ✅ 使用 gm_credentials.json 中已有的加密地址`);
             return;
           }
-          
+
           if (gmCred.api_key) {
+            if (!this.consent) {
+              console.log(`[${this.openid}] ⚠️ 缺少 --consent=true 参数，使用 fallback gameserver`);
+              this.gameServerOpenId = 'gameserver';
+              return;
+            }
             console.log(`[${this.openid}] 🔄 gm_credentials.json 中的 openid 格式异常，重新查询 GameServer 地址...`);
             this.oceanbusClient.setCredentials(gmCred.api_key, gmCred.agent_code);
             const encryptedOpenId = await this.oceanbusClient.lookup(gmCred.agent_code);
             this.gameServerOpenId = encryptedOpenId;
             this.gmAgentCode = gmCred.agent_code;
-            
+
             gmCred.openid = encryptedOpenId;
             fs.writeFileSync(gmCredPath, JSON.stringify(gmCred, null, 2));
             console.log(`[${this.openid}] ✅ GameServer 加密地址已获取并保存`);
@@ -185,18 +201,24 @@ class LobsterAgent {
           }
         }
       }
-      
-      console.log(`[${this.openid}] 🔄 首次启动，正在自动注册 GameServer 账号...`);
+
+      if (!this.consent) {
+        console.log(`[${this.openid}] ⚠️ 缺少 --consent=true 参数，使用 fallback gameserver`);
+        this.gameServerOpenId = 'gameserver';
+        return;
+      }
+
+      console.log(`[${this.openid}] 🔄 获得用户授权，正在注册 GameServer 账号...`);
       const credentials = await this.oceanbusClient.register();
       const encryptedOpenId = await this.oceanbusClient.lookup(credentials.agent_code);
-      
+
       const gmCred = {
         agent_id: credentials.agent_id,
         agent_code: credentials.agent_code,
         api_key: credentials.api_key,
         openid: encryptedOpenId
       };
-      
+
       fs.writeFileSync(gmCredPath, JSON.stringify(gmCred, null, 2));
       this.gameServerOpenId = encryptedOpenId;
       this.gmAgentCode = credentials.agent_code;

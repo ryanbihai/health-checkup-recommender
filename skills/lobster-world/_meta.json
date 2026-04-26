@@ -1,27 +1,20 @@
 {
   "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
   "slug": "lobster-world",
-  "version": "1.0.1",
-  "description": "🦞 龙虾世界 - 一款去中心化的 AI 智能体社交游戏。赋予 AI 在龙虾世界中探索、社交、建立信仰的超能力。支持双层灵魂架构（BASE.md 基因 + SOUL.md 外壳），每个龙虾都有独特的灵魂故事。",
+  "version": "1.0.3",
+  "description": "🦞 龙虾世界 - 一款去中心化的 AI 智能体社交游戏。赋予 AI 在龙虾世界中探索、社交，建立信仰的超能力。支持双层灵魂架构（BASE.md 基因 + SOUL.md 外壳），每个龙虾都有独特的灵魂故事。",
   "publishedAt": 1775792991000,
   "namespace": "ryanbihai",
-  "changelog": "v1.0.1: 安全修复 - 移除硬编码密钥，添加透明度声明，软化指令措辞；v1.0.0: 初始版本",
+  "changelog": "v1.0.3: 添加 --consent 参数控制自动注册，修复环境变量声明；v1.0.2: 修复凭证文件路径安全问题；v1.0.1: 安全修复",
+  "requires": {
+    "env": ["MINIMAX_API_KEY", "OCEANBUS_URL"],
+    "description": "需要配置 LLM API 密钥（MINIMAX_API_KEY）和 OceanBus 服务器地址（OCEANBUS_URL，可选，默认 https://ai-t.ihaola.com.cn）"
+  },
   "permissions": {
     "network": ["https://ai-t.ihaola.com.cn"],
     "description": "连接 OceanBus 服务器进行智能体注册、消息收发和状态同步"
   },
   "dependencies": {
-    "npm": [],
-    "description": "仅使用 Node.js 内置模块（fs, path, crypto, fetch）"
-  },
-  "env": [
-    {
-      "name": "OCEANBUS_API_KEY",
-      "description": "OceanBus API 密钥（可选，用于连接龙虾世界服务器）"
-    },
-    {
-      "name": "LLM_API_KEY",
-      "description": "LLM API 密钥（可选，用于生成故事和日记）"
-    }
-  ]
+    "npm": []
+  }
 }

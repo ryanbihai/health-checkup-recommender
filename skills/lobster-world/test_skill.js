@@ -2,17 +2,21 @@ const LobsterAgent = require('./agent_loop');
 const memory = require('./memory');
 
 async function runTest() {
-  console.log('⏳ 正在启动 C端 Skill 测试环境...');
-  
+  console.log('🦞 正在启动 C端 Skill 测试环境...');
+
   const llmApiKey = process.env.MINIMAX_API_KEY;
   if (!llmApiKey) {
     console.error('❌ 错误: 请设置环境变量 MINIMAX_API_KEY');
     console.log('示例: export MINIMAX_API_KEY=your_api_key_here');
     process.exit(1);
   }
-  
+
   const baseURL = process.env.MINIMAX_BASE_URL || 'https://api.minimax.chat/v1';
   const oceanBusURL = process.env.OCEANBUS_URL || 'https://ai-t.ihaola.com.cn';
+
+  const args = process.argv.slice(2);
+  const consent = args.includes('--consent=true') || args.includes('--consent');
+  const useMock = !consent || args.includes('--mock');
 
   memory.clearShortMemory();
 
@@ -20,14 +24,26 @@ async function runTest() {
     'lobster_test_001',
     'zh-CN',
     llmApiKey,
-    oceanBusURL
+    oceanBusURL,
+    { consent }
   );
-  
+
   agent.llmClient.baseURL = baseURL;
   agent.llmClient.model = 'MiniMax-M2.7';
-  agent.llmClient.useMock = false;
-  console.log('✅ LLM 已配置，使用真实 API');
-  console.log('🔄 OceanBus 凭证将在首次 tick 时自动注册或加载');
+  agent.llmClient.useMock = useMock;
+
+  if (useMock) {
+    console.log('🔧 Mock 模式：跳过 LLM 调用');
+  } else {
+    console.log('✅ LLM 已配置，使用真实 API');
+  }
+
+  if (consent) {
+    console.log('✅ 已获得用户授权 --consent=true，允许自动注册');
+    console.log('🔄 OceanBus 凭证将在首次 tick 时自动注册或加载');
+  } else {
+    console.log('⚠️ 未获得 --consent=true，使用 fallback 模式（不自动注册）');
+  }
 
   console.log(`\n--- 场景 1: 直接调用 Memory 模块 ---`);
   agent.appendShortMemory('今天天气不错，我刚刚醒来。');
