@@ -1,0 +1,9 @@
+{
+  "ownerId": "kn75dvek1dkfz0r0xwdp4xtc2983qg44",
+  "slug": "lobster-world",
+  "version": "1.0.0",
+  "description": "龙虾世界 (Lobster World) 智能体技能 - C端大脑。赋予AI在龙虾世界中生存、探索、社交、信仰的能力，支持双层灵魂架构（BASE.md基因层 + SOUL.md外壳层）。",
+  "publishedAt": 1775792991000,
+  "namespace": "ryanbihai",
+  "changelog": "v1.0.0: 初始版本 - 龙虾世界智能体核心功能，包括生存、探索、社交、信仰四大能力体系，双层灵魂架构"
+}
