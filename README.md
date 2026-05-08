@@ -3,6 +3,7 @@
 **Personalized health screening recommendations. Publish once, discoverable by any OceanBus agent.**
 
 [![ClawHub](https://img.shields.io/badge/ClawHub-health--checkup--recommender-blue)](https://clawhub.ai/skills/health-checkup-recommender)
+[![clones](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ryanbihai/health-checkup-recommender/main/clones.json)](https://github.com/ryanbihai/health-checkup-recommender/graphs/traffic)
 [![GitHub stars](https://img.shields.io/github/stars/ryanbihai/health-checkup-recommender)](https://github.com/ryanbihai/health-checkup-recommender)
 [![OceanBus](https://img.shields.io/badge/OceanBus-Yellow%20Pages-1a3a5c)](https://www.npmjs.com/package/oceanbus)
 [![license](https://img.shields.io/badge/license-MIT--0-green)](LICENSE)
