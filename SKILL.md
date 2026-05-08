@@ -367,4 +367,51 @@ node scripts/recommend.js
 
 ---
 
+## 转接人工坐席（ocean-desk）
+
+当客户完成 AI 推荐后需要人工协助（如预约操作、改套餐、退款），通过 ocean-thread/v1 协议转接 ocean-desk 坐席。
+
+### 触发条件
+
+- 客户说"帮我预约"、"联系客服"、"人工"、"转人工"
+- AI 无法解决客户问题时
+
+### 流程
+
+```
+客户提出人工协助需求
+  → AI 取得用户同意
+  → 构造 ocean-thread/v1 create 协议消息
+  → 发送至 Desk OpenID
+  → 告知用户："已转接人工坐席，请稍候..."
+```
+
+### 消息 payload 模板
+
+```json
+{
+  "source_skill": "health-checkup-recommender",
+  "priority": "normal",
+  "customer_profile": {
+    "name": "张先生",
+    "age": 45,
+    "gender": "男",
+    "city": "北京"
+  },
+  "ai_summary": "已完成体检项目推荐：基础套餐 HaoLa01 + 心血管增强项 HaoLa23，总价 1200 元。客户要求协助预约。",
+  "recommended_actions": ["预约体检", "确认心血管增强项"],
+  "conversation_log": [
+    { "role": "ai", "text": "为您推荐基础套餐 + 心血管增强项，共1200元", "time": "10:28" },
+    { "role": "customer", "text": "帮我预约", "time": "10:29" }
+  ]
+}
+```
+
+### 前置条件
+
+- ocean-desk 坐席系统已部署
+- Desk OpenID 已配置（环境变量 `OCEANBUS_DESK_OPENID`）
+
+---
+
 **详细话术模板请查看** **`PROMPTS.md`**
