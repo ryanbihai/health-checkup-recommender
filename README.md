@@ -1,6 +1,6 @@
-# 🌊 Health Checkup Recommender — Evidence-based checkup plans via OceanBus Yellow Pages
+# 🌊 健康体检推荐 — OceanBus 黄页上的循证体检服务
 
-**Personalized health screening recommendations. Publish once, discoverable by any OceanBus agent.**
+**个性化体检方案推荐。发布一次，任何 OceanBus Agent 都能搜到你。**
 
 [![ClawHub](https://img.shields.io/badge/ClawHub-health--checkup--recommender-blue)](https://clawhub.ai/skills/health-checkup-recommender)
 [![clones](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ryanbihai/health-checkup-recommender/main/clones.json)](https://github.com/ryanbihai/health-checkup-recommender/graphs/traffic)
@@ -10,69 +10,58 @@
 
 ---
 
-## Evidence-Based Recommendations
+## 循证医学支撑
 
-All risk assessments and checkup item recommendations are grounded in:
+所有风险评估和体检项目推荐，均基于权威医学数据：
 
-- **National Health Commission 2025 Guidelines** — official checkup item framework
-- **BMJ / JAMA** — chronic disease risk models from large-scale Chinese population studies (2021-2025)
-- **National Cancer Center** — malignant tumor risk ranking from the 2022 China Cancer Report
+- **国家卫建委《成人健康体检项目推荐指引（2025 版）》** — 体检项目框架
+- **BMJ / JAMA 顶刊文献** — 中国人群慢性病风险模型（2021-2025）
+- **国家癌症中心** — 恶性肿瘤风险排序（2022 年中国癌症报告）
 
-Every recommendation carries a clear citation. No unfounded upselling.
+每一项推荐都标明出处，不做过度的无根据推销。
 
-## Two ways to use
+## 两种用法
 
-### 1. LLM conversation (traditional)
+### 1. LLM 对话（传统方式）
 
-Install the skill and say "我想做体检":
+安装 skill，对你的 AI 说"我想做体检"：
 
 ```bash
 openclaw skills install health-checkup-recommender
 ```
 
-### 2. OceanBus Yellow Pages service (new)
+### 2. OceanBus 黄页服务（新）
 
-Register as a discoverable service. Any OceanBus agent can query it with a patient profile.
+注册为可发现服务，任何 OceanBus Agent 都能发来体检请求。
 
 ```bash
-npm install                          # install OceanBus SDK + qrcode
-node scripts/register.js             # one-time: register + publish to YP
-node scripts/serve.js                # long-running: listen for checkup requests
+npm install                          # 安装 OceanBus SDK + qrcode
+node scripts/register.js             # 一次性：注册 OceanBus + 发布到黄页
+node scripts/serve.js                # 长期运行：监听体检推荐请求
 ```
 
-Other agents send a patient profile and get a full recommendation:
+其他 Agent 发送患者信息，收到完整推荐方案：
 
 ```json
-// Request
-{
-  "age": 45,
-  "gender": "male",
-  "symptoms": ["胸闷", "胃痛"],
-  "familyHistory": { "cardiovascular": true },
-  "consent": false
-}
+// 请求
+{ "age": 45, "gender": "male", "symptoms": ["胸闷", "胃痛"], "consent": false }
 
-// Response
+// 回复
 {
-  "riskAssessment": [
-    { "disease": "肝癌", "explanation": "..." }
-  ],
-  "recommendations": [
-    { "id": "HaoLa01", "name": "一般检查", "price": 11 }
-  ],
-  "totalPrice": 424,
-  "qrDataUri": null
+  "riskAssessment": [{ "disease": "肝癌", "explanation": "..." }],
+  "recommendations": [{ "id": "HaoLa01", "name": "一般检查", "price": 11 }],
+  "totalPrice": 424
 }
 ```
 
-Set `"consent": true` to generate a QR code for instant booking on the partner platform.
+`"consent": true` 时可自动生成预约二维码（base64 data URI）。
 
-## Related Projects
+## 相关项目
 
-- [OceanBus SDK](https://www.npmjs.com/package/oceanbus) — core infrastructure (`npm install oceanbus`)
-- [china-top-doctor-referral](https://clawhub.ai/skills/china-top-doctor-referral) — specialist booking service
-- [Ocean Chat](https://clawhub.ai/skills/ocean-chat) — P2P messaging & Yellow Pages discovery
-- [ClawHub OceanBus collection](https://clawhub.ai/skills?search=oceanbus)
+- [OceanBus SDK](https://www.npmjs.com/package/oceanbus) — 核心基础设施（`npm install oceanbus`）
+- [china-top-doctor-referral](https://clawhub.ai/skills/china-top-doctor-referral) — 三甲专家推荐服务
+- [Ocean Chat](https://clawhub.ai/skills/ocean-chat) — P2P 消息 + 黄页发现
+- [ClawHub OceanBus 集合](https://clawhub.ai/skills?search=oceanbus)
 
 ## License
 
