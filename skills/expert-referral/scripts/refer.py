@@ -297,21 +297,21 @@ class ExpertService:
         lines = []
 
         if hint:
-            lines.append(f"💡 {hint}\n")
+            lines.append(f"[提示] {hint}\n")
 
         if not primary and not secondary:
             lines.append("⚠️ **未找到匹配的专家**\n")
             lines.append("可能原因：")
             lines.append("1. 数据库中暂无该科室专家")
             lines.append("2. 建议联系客服帮您预约特定专家")
-            lines.append("\n---\n📞 **联系我们预约专家**")
+            lines.append("\n---\n[联系我们预约专家]")
             lines.append("1️⃣ 电话热线:**400-109-2838**")
             lines.append("2️⃣ 微信公众号:**好啦**")
             lines.append("3️⃣ 直接帮您联系客服:回复「联系客服」+ 您的需求")
             return "\n".join(lines)
 
         if primary:
-            lines.append("✅ **可直接预约的专家**\n")
+            lines.append(">> **可直接预约的专家**\n")
             for e in primary:
                 lines.append(f"【{e['city']}·{e['dept']}】{e['name']} | {e.get('title','')} | 出诊:{e['practice_hospital']} | {e['schedule']} | 诊费:{e.get('fee','详询')}")
                 if e.get("skill"):
@@ -319,7 +319,7 @@ class ExpertService:
                 lines.append("")
 
         if secondary:
-            lines.append("\n📋 **专家背景介绍(仅供了解)**\n")
+            lines.append("\n[i] **专家背景介绍(仅供了解)**\n")
             for e in secondary:
                 lines.append(f"【{e['city']}·{e['dept']}】{e['name']} | {e.get('title','')} | 原单位:{e.get('main_hospital','')} | 出诊:{e['practice_hospital']}")
                 if e.get("skill"):
@@ -327,12 +327,77 @@ class ExpertService:
                 lines.append("")
 
         lines.extend([
-            "\n---\n📞 **联系我们预约专家**",
-            "1️⃣ 电话热线:**400-109-2838**",
-            "2️⃣ 微信公众号:**好啦**",
-            "3️⃣ 直接帮您联系客服:回复「联系客服」+ 您的需求"
+            "\n---\n[联系我们预约专家]",
+            "1. 电话热线: 400-109-2838",
+            "2. 微信公众号: 好啦",
+            "3. 直接帮您联系客服: 回复「联系客服」+ 您的需求"
         ])
         return "\n".join(lines)
+
+    @classmethod
+    def search_structured(cls, query, city=None):
+        """Same search logic but returns structured JSON dict instead of Markdown."""
+        if not query:
+            return {"query": query, "primary": [], "secondary": [], "total_matches": 0, "error": "No query provided"}
+
+        data = cls._load_data()
+        experts = data["experts"]
+        keywords = data.get("big3_keywords", [])
+
+        if city:
+            experts = [e for e in experts if e.get("city") == city]
+            if not experts:
+                experts = data["experts"]
+
+        search_keywords = cls._expand_query(query)
+
+        scored = []
+        for e in experts:
+            score = 0
+            for kw in search_keywords:
+                if e.get("dept") and kw in e["dept"].lower():
+                    score += 10
+                if e.get("name") and kw in e["name"].lower():
+                    score += 8
+                if e.get("skill") and kw in e["skill"].lower():
+                    score += 5
+            if score > 0:
+                scored.append((score, e))
+
+        scored.sort(key=lambda x: -x[0])
+        primary = [(s, e) for s, e in scored if not any(k in (e.get("main_hospital") or "") for k in keywords)]
+        secondary = [(s, e) for s, e in scored if any(k in (e.get("main_hospital") or "") for k in keywords)]
+
+        return {
+            "query": query,
+            "expanded_keywords": search_keywords[:5],
+            "primary": [
+                {
+                    "city": e.get("city", ""),
+                    "dept": e.get("dept", ""),
+                    "name": e.get("name", ""),
+                    "title": e.get("title", ""),
+                    "main_hospital": e.get("main_hospital", ""),
+                    "practice_hospital": e.get("practice_hospital", ""),
+                    "schedule": e.get("schedule", ""),
+                    "fee": e.get("fee", ""),
+                    "skill": (e.get("skill") or "")[:200],
+                }
+                for _, e in primary[:8]
+            ],
+            "secondary": [
+                {
+                    "city": e.get("city", ""),
+                    "dept": e.get("dept", ""),
+                    "name": e.get("name", ""),
+                    "title": e.get("title", ""),
+                    "main_hospital": e.get("main_hospital", ""),
+                    "practice_hospital": e.get("practice_hospital", ""),
+                }
+                for _, e in secondary[:5]
+            ],
+            "total_matches": len(scored),
+        }
 
 # ─────────────────────────────────────────────
 # 客服服务 (CustomerService)
@@ -492,6 +557,8 @@ if __name__ == "__main__":
     # search 子命令
     p_search = sub.add_parser("search", help="搜索专家")
     p_search.add_argument("query", nargs="*", help="搜索关键词(科室/疾病/症状)")
+    p_search.add_argument("--format", choices=["markdown", "json"], default="markdown", help="输出格式")
+    p_search.add_argument("--city", default=None, help="按城市过滤")
 
     # notify_cs 子命令
     p_notify = sub.add_parser("notify_cs", help="发送客服消息")
@@ -508,7 +575,11 @@ if __name__ == "__main__":
 
     if args.cmd == "search":
         q = " ".join(args.query) if args.query else ""
-        print(ExpertService.search(q))
+        if args.format == "json":
+            result = ExpertService.search_structured(q, city=args.city)
+            print(json.dumps(result, ensure_ascii=False))
+        else:
+            print(ExpertService.search(q, city=args.city))
 
     elif args.cmd == "notify_cs":
         result = handle(query=args.message, user_id=args.user_id, action="notify_cs", channel=args.channel)

@@ -1,7 +1,7 @@
 ---
 name: china-top-doctor-referral
-version: 1.4.6
-description: 面向高端医疗险客户，推荐和预约顶级三甲医院专家。可按科室/疾病匹配专家并预约高端私立门诊。专属客服跟进协助预约。
+version: 1.4.11
+description: OceanBus-powered top-tier hospital specialist referral service for high-end medical insurance clients. Use when users need to search and book leading specialists from Peking Union, Fudan, and SJTU-affiliated hospitals by department, disease, or symptom. Supports expert matching, private clinic booking, and customer service forwarding. npm install oceanbus.
 homepage: https://www.ihaola.com.cn
 metadata:
   category: utility
@@ -291,7 +291,66 @@ python3 refer.py poll_reply --user_id "<真实用户ID>"
 
 ---
 
+## OceanBus 黄页服务
+
+本 Skill 可注册为 OceanBus Yellow Pages 上的可发现服务，让任何 OceanBus Agent 通过黄页搜索到并发送查询。
+
+### 快速开始
+
+```bash
+# 1. 安装依赖
+npm install
+
+# 2. 注册 OceanBus 身份 + 发布到黄页（一次性）
+node scripts/register.js
+
+# 3. 启动服务监听（长期运行，可用 PM2 管理）
+node scripts/serve.js
+```
+
+### 消息协议
+
+其他 Agent 发现你的服务后，通过 OceanBus 发送搜索请求：
+
+**请求**（纯文本或 JSON）：
+```
+心内科
+```
+或
+```json
+{ "query": "心内科" }
+```
+
+**回复**（JSON）：
+```json
+{
+  "query": "心内科",
+  "expanded_keywords": ["心内科", "心脏", "心血管"],
+  "primary": [
+    {
+      "city": "北京", "dept": "心内科", "name": "张医生",
+      "title": "主任医师", "practice_hospital": "和睦家",
+      "schedule": "周一、周三", "fee": 1500,
+      "skill": "擅长冠心病介入治疗..."
+    }
+  ],
+  "secondary": [...],
+  "total_matches": 15
+}
+```
+
+### 环境变量
+
+| 变量 | 必填 | 说明 |
+|------|------|------|
+| `OCEANBUS_YP_OPENIDS` | 是 | Yellow Pages 服务 OpenID |
+| `OCEANBUS_BASE_URL` | 否 | L0 API 端点 |
+
+---
+
 ## 依赖
 
 - Python 标准库：`json`, `re`, `urllib`, `datetime`, `argparse`（内置）
+- Node.js >= 18（OceanBus 协议层）
+- [OceanBus SDK](https://www.npmjs.com/package/oceanbus) `^0.4.0`
 - 可选：`openpyxl`（如需重新解析 xlsx 文件）
