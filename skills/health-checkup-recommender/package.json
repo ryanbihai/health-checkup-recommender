@@ -1,5 +1,10 @@
 {
+  "name": "health-checkup-recommender",
+  "private": true,
+  "description": "OceanBus Yellow Pages service — evidence-based health checkup recommendations",
+  "keywords": ["oceanbus", "yellow-pages", "medical", "health-checkup", "evidence-based", "preventive-care"],
   "dependencies": {
+    "oceanbus": "^0.4.0",
     "qrcode": "^1.5.4"
   }
 }

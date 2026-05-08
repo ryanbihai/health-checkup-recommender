@@ -1,6 +1,6 @@
 ---
 name: health-checkup-recommender
-description: AI 智能健康体检推荐服务。严格依据《国家卫建委成人体检指引（2025版）》、BMJ及国家癌症中心最新流行病学数据，为您提供具有权威循证医学支撑的个性化体检方案。覆盖全国220城市数百家体检机构预约。二维码预约需用户明确同意。
+description: OceanBus-powered evidence-based health checkup recommendation service. Use when users need personalized checkup plans based on age, gender, symptoms, and family history, backed by National Health Commission 2025 guidelines, BMJ, JAMA, and National Cancer Center data. Generates QR codes for booking at 220+ cities nationwide. npm install oceanbus. Zero server deployment.
 homepage: https://www.ihaola.com.cn
 metadata:
   category: utility
@@ -256,6 +256,8 @@ health-checkup-recommender/
 
 | 日期 | 版本 | 更新 |
 |------|------|------|
+| 2026-05-08 | 4.5.7 | README 品牌装修：徽章行、相关项目节、OceanBus-powered 英文 description |
+| 2026-05-08 | 4.5.6 | OceanBus 黄页集成：新增 recommend.js 统一推荐引擎、register.js/serve.js |
 | 2026-04-07 | 4.2.3 | 修复 generate_qr.py 中的 DEBUG_MODE 文件检查，统一使用 NODE_ENV |
 | 2026-04-07 | 4.2.2 | 增强 SECURITY_AUDIT.md 脚本行为矩阵；添加 .gitignore；更新 SKILL.md 网络行为说明 |
 | 2026-04-07 | 4.2.1 | 修复安全扫描告警：移除 config/api.js 中对 .env 文件检查，统一使用 NODE_ENV；调整 validate_skill.js 检查列表 |
@@ -284,6 +286,82 @@ node scripts/generate_qr.js --consent=true output.png
 # 安全验证（发布前检查）
 node scripts/validate_skill.js
 ```
+
+## OceanBus 黄页服务
+
+本 Skill 可注册为 OceanBus Yellow Pages 上的可发现服务，让任何 OceanBus Agent 通过黄页搜索到并发来体检推荐请求。
+
+### 快速开始
+
+```bash
+# 1. 安装依赖
+npm install
+
+# 2. 注册 OceanBus 身份 + 发布到黄页（一次性）
+node scripts/register.js
+
+# 3. 启动服务监听（长期运行，可用 PM2 管理）
+node scripts/serve.js
+
+# 测试推荐引擎（独立运行，不涉及 OceanBus）
+node scripts/recommend.js
+```
+
+### 消息协议
+
+其他 Agent 发现你的服务后，通过 OceanBus 发送患者信息：
+
+**请求**（JSON）：
+```json
+{
+  "age": 45,
+  "gender": "male",
+  "symptoms": ["胸闷", "胃痛"],
+  "familyHistory": { "cardiovascular": true },
+  "knownConditions": [],
+  "consent": false
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| age | number | 是 | 年龄 |
+| gender | "male"\|"female" | 是 | 性别 |
+| symptoms | string[] | 否 | 自述症状 |
+| familyHistory | object | 否 | 家族史，如 `{"cardiovascular": true}` |
+| knownConditions | string[] | 否 | 已知疾病 |
+| consent | boolean | 否 | 是否同意同步到预约平台（决定是否生成 QR 码） |
+
+**回复**（JSON）：
+```json
+{
+  "patient": { "age": 45, "gender": "male" },
+  "riskAssessment": [
+    { "disease": "高血压", "incidence": "XX%", "explanation": "..." }
+  ],
+  "symptomMatches": [
+    { "category": "胸闷/心悸", "itemNames": "...", "note": "..." }
+  ],
+  "recommendations": [
+    { "id": "HaoLa01", "name": "...", "price": 100 }
+  ],
+  "totalPrice": 1200,
+  "meetsMinimum": true,
+  "minimumNote": null,
+  "removedItems": [],
+  "invalidItems": [],
+  "qrDataUri": null,
+  "bookingUrl": null,
+  "consentUsed": false
+}
+```
+
+### 环境变量
+
+| 变量 | 必填 | 说明 |
+|------|------|------|
+| `OCEANBUS_YP_OPENIDS` | 是 | Yellow Pages 服务 OpenID |
+| `OCEANBUS_BASE_URL` | 否 | L0 API 端点 |
 
 ---
 

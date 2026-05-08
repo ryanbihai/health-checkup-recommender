@@ -1,66 +1,77 @@
-# 🏥 健康体检推荐 (health-checkup-recommender)
+# 🌊 Health Checkup Recommender — Evidence-based checkup plans via OceanBus Yellow Pages
 
-> AI 健康体检推荐服务 — 根据年龄/性别/症状/家族史，智能推荐个性化体检套餐
+**Personalized health screening recommendations. Publish once, discoverable by any OceanBus agent.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/Platform-OpenClaw-green.svg)](https://openclaw.ai)
-[![ClawHub](https://img.shields.io/badge/ClawHub-v4.1.6-orange.svg)](https://clawhub.ai/skill/ryanbihai/health-checkup-recommender)
-[![Downloads](https://img.shields.io/badge/Downloads-60+-blue.svg)](https://clawhub.ai/skill/ryanbihai/health-checkup-recommender)
-
-**Keywords:** 健康体检 | 体检推荐 | 体检套餐 | AI medical checkup | health examination | personalized体检 | evidence-based medicine | 循证医学 | 体检预约
+[![ClawHub](https://img.shields.io/badge/ClawHub-health--checkup--recommender-blue)](https://clawhub.ai/skills/health-checkup-recommender)
+[![OceanBus](https://img.shields.io/badge/OceanBus-Yellow%20Pages-1a3a5c)](https://www.npmjs.com/package/oceanbus)
+[![license](https://img.shields.io/badge/license-MIT--0-green)](LICENSE)
 
 ---
 
-## 🌟 权威循证医学支撑
+## Evidence-Based Recommendations
 
-本技能的所有风险评估和体检项目推荐，均严格基于国内外顶级医学机构和权威期刊的最新公开发布数据，确保推荐的**科学性**和**可靠性**：
+All risk assessments and checkup item recommendations are grounded in:
 
-- **国家卫建委官方指引**：所有体检加项依据均映射自《成人健康体检项目推荐指引（2025年版）》。
-- **BMJ / JAMA 顶刊文献**：心脑血管、高血压、糖尿病等慢性病的高发年龄段风险模型，基于国际顶级医学期刊最新发布的中国人群大型流行病学调查数据（2021-2025）。
-- **国家癌症中心数据**：恶性肿瘤风险排序完全遵循《2022年中国恶性肿瘤流行情况分析》。
+- **National Health Commission 2025 Guidelines** — official checkup item framework
+- **BMJ / JAMA** — chronic disease risk models from large-scale Chinese population studies (2021-2025)
+- **National Cancer Center** — malignant tumor risk ranking from the 2022 China Cancer Report
 
-> 💡 **用户信任保障**：AI 在向您推荐每一项收费检查时，都会在对话中清晰标明该项检查的**国家级指引出处**或**医学文献来源**，绝不进行无根据的过度推销。
+Every recommendation carries a clear citation. No unfounded upselling.
 
----
+## Two ways to use
 
-## ✨ 功能特色
+### 1. LLM conversation (traditional)
 
-| Feature | Description |
-|---------|-------------|
-| 🤖 智能推荐 | 根据年龄/性别/症状/家族史推荐体检项目 |
-| 📋 循证依据 | 每项推荐明确附带国家卫建委或顶刊文献出处 |
-| ✅ 项目核查 | 代码验证确保项目真实存在 |
-| 💰 价格计算 | 代码自动计算总价，避免LLM数学错误 |
-| 📱 预约二维码 | 自动生成体检预约二维码（支持接口降级） |
-| 🛡️ 容错降级 | 接口404时自动降级为默认二维码，确保100%成功率 |
-| 🏥 机构对接 | 支持多家体检机构预约 |
-
----
-
-## 安装
+Install the skill and say "我想做体检":
 
 ```bash
 openclaw skills install health-checkup-recommender
 ```
 
----
+### 2. OceanBus Yellow Pages service (new)
 
-## 使用
+Register as a discoverable service. Any OceanBus agent can query it with a patient profile.
 
-对你的 OpenClaw 说"我想做体检"或"推荐个体检套餐"即可启动。
+```bash
+npm install                          # install OceanBus SDK + qrcode
+node scripts/register.js             # one-time: register + publish to YP
+node scripts/serve.js                # long-running: listen for checkup requests
+```
 
----
+Other agents send a patient profile and get a full recommendation:
 
-## 适用人群
+```json
+// Request
+{
+  "age": 45,
+  "gender": "male",
+  "symptoms": ["胸闷", "胃痛"],
+  "familyHistory": { "cardiovascular": true },
+  "consent": false
+}
 
-- 🧑💼 职场人士年度体检
-- 👴 老年人全面体检
-- 🤰 孕前体检
-- 💊 慢病患者定期检查
-- 🏃 健康人群主动筛查
+// Response
+{
+  "riskAssessment": [
+    { "disease": "肝癌", "explanation": "..." }
+  ],
+  "recommendations": [
+    { "id": "HaoLa01", "name": "一般检查", "price": 11 }
+  ],
+  "totalPrice": 424,
+  "qrDataUri": null
+}
+```
 
----
+Set `"consent": true` to generate a QR code for instant booking on the partner platform.
 
-## 许可
+## Related Projects
 
-[MIT License](LICENSE)
+- [OceanBus SDK](https://www.npmjs.com/package/oceanbus) — core infrastructure (`npm install oceanbus`)
+- [china-top-doctor-referral](https://clawhub.ai/skills/china-top-doctor-referral) — specialist booking service
+- [Ocean Chat](https://clawhub.ai/skills/ocean-chat) — P2P messaging & Yellow Pages discovery
+- [ClawHub OceanBus collection](https://clawhub.ai/skills?search=oceanbus)
+
+## License
+
+MIT-0

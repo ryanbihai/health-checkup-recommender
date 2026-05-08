@@ -144,4 +144,14 @@ if (require.main === module) {
   })
 }
 
-module.exports = { buildQRContent, generateQR }
+async function generateQRDataUri(pkg) {
+  const qrContent = buildQRContent(pkg);
+  return QRCode.toDataURL(qrContent, {
+    errorCorrectionLevel: 'M',
+    margin: 3,
+    width: 400,
+    color: { dark: '#1a3a5c', light: '#ffffff' }
+  });
+}
+
+module.exports = { buildQRContent, generateQR, generateQRDataUri }
