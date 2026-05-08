@@ -256,6 +256,8 @@ health-checkup-recommender/
 
 | 日期 | 版本 | 更新 |
 |------|------|------|
+| 2026-05-08 | 4.6.0 | 清理：删除独立的 OceanBus 服务模式（register/serve）；recommend.js 保留为纯函数 |
+| 2026-05-08 | 4.5.8 | clones 徽章 + GitHub Action |
 | 2026-05-08 | 4.5.7 | README 品牌装修：徽章行、相关项目节、OceanBus-powered 英文 description |
 | 2026-05-08 | 4.5.6 | OceanBus 黄页集成：新增 recommend.js 统一推荐引擎、register.js/serve.js |
 | 2026-04-07 | 4.2.3 | 修复 generate_qr.py 中的 DEBUG_MODE 文件检查，统一使用 NODE_ENV |
