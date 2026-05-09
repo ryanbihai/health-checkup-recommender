@@ -1,5 +1,6 @@
 ---
 name: health-checkup-recommender
+version: 4.6.1
 description: OceanBus-powered evidence-based health checkup recommendation service. Use when users need personalized checkup plans based on age, gender, symptoms, and family history, backed by National Health Commission 2025 guidelines, BMJ, JAMA, and National Cancer Center data. Generates QR codes for booking at 220+ cities nationwide. npm install oceanbus. Zero server deployment.
 homepage: https://www.ihaola.com.cn
 metadata:
