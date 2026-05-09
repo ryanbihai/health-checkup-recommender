@@ -16,7 +16,6 @@
 - [快速开始](#快速开始)
 - [能力一览](#能力一览)
 - [转人工坐席](#转人工坐席)
-- [在 OceanBus 生态中的定位](#在-oceanbus-生态中的定位)
 - [安全](#安全)
 - [相关项目](#相关项目)
 - [参与贡献](#参与贡献)
@@ -98,18 +97,6 @@ npm install
 
 ---
 
-## 在 OceanBus 生态中的定位
-
-```
-Ocean Chat           health-checkup     china-top-doctor
-(P2P 消息基础设施)  →  (垂直 Skill — 体检)  →  (垂直 Skill — 专家)
-                            ↓
-                       ocean-desk (转人工坐席)
-```
-
-本 Skill 展示的是 OceanBus 生态中**垂直行业 Agent** 的完整形态：AI 完成专业推荐 → 需要时转接人工 → 附带完整上下文。
-
----
 
 ## 安全
 
